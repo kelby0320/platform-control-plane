@@ -9,7 +9,7 @@ pub struct App {
 
 impl App {
     pub async fn build(settings: Settings) -> Result<Self, std::io::Error> {
-        let router = Router::new().route("/healthz", get(healthz));
+        let router = Router::new().route("/api/v1/healthz", get(healthz));
 
         let addr = format!(
             "{}:{}",

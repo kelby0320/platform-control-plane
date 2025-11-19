@@ -14,7 +14,7 @@ async fn test_healthz() {
         app.run().await;
     });
 
-    let response = reqwest::get("http://localhost:8000/healthz")
+    let response = reqwest::get("http://localhost:8080/api/v1/healthz")
         .await
         .expect("Failed to send request");
     assert_eq!(response.status(), StatusCode::OK);
