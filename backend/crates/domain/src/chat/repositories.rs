@@ -5,6 +5,6 @@ use async_trait::async_trait;
 
 #[async_trait]
 pub trait ChatSessionRepository {
-    fn create(&self, chat_session: ChatSession) -> Result<ChatSession, ChatSessionError>;
-    fn get(&self, id: SessionId) -> Result<ChatSession, ChatSessionError>;
+    async fn create(&self, chat_session: ChatSession) -> Result<ChatSession, ChatSessionError>;
+    async fn get_by_id(&self, id: SessionId) -> Result<ChatSession, ChatSessionError>;
 }

@@ -1,6 +1,6 @@
-use crate::config::Settings;
 use crate::routes::health::healthz;
 use axum::{Router, routing::get};
+use infra::config::Settings;
 
 pub struct App {
     addr: String,

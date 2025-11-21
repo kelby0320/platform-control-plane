@@ -1,6 +1,6 @@
 use axum::http::StatusCode;
+use infra::config::get_configuration;
 use platform_api::app::App;
-use platform_api::config::get_configuration;
 
 #[tokio::test]
 async fn test_healthz() {
