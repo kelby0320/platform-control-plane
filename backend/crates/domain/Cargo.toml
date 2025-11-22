@@ -7,4 +7,4 @@ edition = "2024"
 async-trait = "0.1.89"
 chrono = "0.4.42"
 thiserror = "2.0.17"
-uuid = "1.18.1"
+uuid = { version = "1.18.1", features = ["v4"] }

@@ -1,5 +1,6 @@
 pub mod errors;
 pub mod repositories;
+pub mod service;
 pub mod session;
 pub mod values;
 

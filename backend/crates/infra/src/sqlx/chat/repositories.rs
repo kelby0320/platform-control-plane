@@ -27,7 +27,7 @@ impl ChatSessionRepository for SqlxChatSessionRepository {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(|e| from_sqlx_error(e))?;
+        .map_err(from_sqlx_error)?;
         Ok(row.into())
     }
 
@@ -40,7 +40,7 @@ impl ChatSessionRepository for SqlxChatSessionRepository {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(|e| from_sqlx_error(e))?;
+        .map_err(from_sqlx_error)?;
         Ok(row.into())
     }
 }
