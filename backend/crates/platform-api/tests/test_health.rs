@@ -1,21 +1,17 @@
 use axum::http::StatusCode;
-use infra::config::get_configuration;
-use platform_api::app::App;
+
+mod common;
 
 #[tokio::test]
 async fn test_healthz() {
-    let settings = get_configuration().expect("Failed to load application settings.");
+    let app = common::spawn_app().await;
+    let client = reqwest::Client::new();
 
-    let app = App::build(settings)
+    let response = client
+        .get(format!("{}/api/v1/healthz", &app.address))
+        .send()
         .await
-        .expect("Failed to build application.");
+        .expect("Failed to execute request.");
 
-    tokio::spawn(async move {
-        app.run().await;
-    });
-
-    let response = reqwest::get("http://localhost:8080/api/v1/healthz")
-        .await
-        .expect("Failed to send request");
     assert_eq!(response.status(), StatusCode::OK);
 }

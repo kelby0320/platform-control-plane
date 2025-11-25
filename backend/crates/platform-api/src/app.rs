@@ -3,6 +3,7 @@ use axum::{Router, routing::get};
 use domain::chat::service::{ChatSessionService, ChatSessionServiceImpl};
 use infra::{config::Settings, sqlx::chat::repositories::SqlxChatSessionRepository};
 use std::sync::Arc;
+use tokio::net::TcpListener;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -10,8 +11,10 @@ pub struct AppState {
 }
 
 pub struct App {
-    addr: String,
+    pub addr: String,
+    pub port: u16,
     router: Router,
+    listener: TcpListener,
 }
 
 impl App {
@@ -29,21 +32,27 @@ impl App {
             .nest("/api/v1/chat", crate::routes::chat::router())
             .with_state(state);
 
-        let addr = format!(
+        let listener = TcpListener::bind(format!(
             "{}:{}",
             settings.application.host, settings.application.port
-        );
-        let app = Self { addr, router };
+        ))
+        .await?;
+
+        let addr = listener.local_addr()?.to_string();
+        let port = listener.local_addr()?.port();
+
+        let app = Self {
+            addr,
+            port,
+            router,
+            listener,
+        };
         Ok(app)
     }
 
     pub async fn run(self) {
-        let listener = tokio::net::TcpListener::bind(&self.addr)
-            .await
-            .expect("Failed to bind address");
-
         println!("Listening on {}", self.addr);
-        axum::serve(listener, self.router)
+        axum::serve(self.listener, self.router)
             .await
             .expect("Failed to start server");
     }
