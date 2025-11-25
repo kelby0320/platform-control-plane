@@ -1,8 +1,9 @@
 use crate::chat::{
     errors::ChatSessionError,
-    repositories::ChatSessionRepository,
+    messages::ChatMessage,
+    repositories::{ChatMessageRepository, ChatSessionRepository},
     session::ChatSession,
-    values::{SessionId, SessionTitle},
+    values::{MessageId, MessageRole, SessionId, SessionTitle},
 };
 use crate::shared::user::UserId;
 use async_trait::async_trait;
@@ -17,20 +18,36 @@ pub trait ChatSessionService {
         title: SessionTitle,
     ) -> Result<ChatSession, ChatSessionError>;
     async fn get_session(&self, id: SessionId) -> Result<ChatSession, ChatSessionError>;
+    async fn add_message(
+        &self,
+        session_id: SessionId,
+        role: MessageRole,
+        content: String,
+    ) -> Result<ChatMessage, ChatSessionError>;
+    async fn get_messages(
+        &self,
+        session_id: SessionId,
+    ) -> Result<Vec<ChatMessage>, ChatSessionError>;
 }
 
-pub struct ChatSessionServiceImpl<R: ChatSessionRepository> {
-    repository: R,
+pub struct ChatSessionServiceImpl<S: ChatSessionRepository, M: ChatMessageRepository> {
+    session_repository: S,
+    message_repository: M,
 }
 
-impl<R: ChatSessionRepository> ChatSessionServiceImpl<R> {
-    pub fn new(repository: R) -> Self {
-        Self { repository }
+impl<S: ChatSessionRepository, M: ChatMessageRepository> ChatSessionServiceImpl<S, M> {
+    pub fn new(session_repository: S, message_repository: M) -> Self {
+        Self {
+            session_repository,
+            message_repository,
+        }
     }
 }
 
 #[async_trait]
-impl<R: ChatSessionRepository + Send + Sync> ChatSessionService for ChatSessionServiceImpl<R> {
+impl<S: ChatSessionRepository + Send + Sync, M: ChatMessageRepository + Send + Sync>
+    ChatSessionService for ChatSessionServiceImpl<S, M>
+{
     async fn create_session(
         &self,
         user_id: UserId,
@@ -43,10 +60,41 @@ impl<R: ChatSessionRepository + Send + Sync> ChatSessionService for ChatSessionS
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
-        self.repository.create(session).await
+        self.session_repository.create(session).await
     }
 
     async fn get_session(&self, id: SessionId) -> Result<ChatSession, ChatSessionError> {
-        self.repository.get_by_id(id).await
+        self.session_repository.get_by_id(id).await
+    }
+
+    async fn add_message(
+        &self,
+        session_id: SessionId,
+        role: MessageRole,
+        content: String,
+    ) -> Result<ChatMessage, ChatSessionError> {
+        // Verify session exists
+        self.session_repository
+            .get_by_id(session_id.clone())
+            .await?;
+
+        let message = ChatMessage {
+            id: MessageId::from(Uuid::new_v4()),
+            session_id,
+            role,
+            content,
+            created_at: Utc::now(),
+        };
+        self.message_repository.create(message).await
+    }
+
+    async fn get_messages(
+        &self,
+        session_id: SessionId,
+    ) -> Result<Vec<ChatMessage>, ChatSessionError> {
+        // Verify session exists
+        // self.session_repository.get_by_id(session_id.clone()).await?;
+
+        self.message_repository.list_by_session_id(session_id).await
     }
 }

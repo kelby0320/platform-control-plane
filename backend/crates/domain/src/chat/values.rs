@@ -1,4 +1,6 @@
 use crate::chat::errors::ChatSessionError;
+use std::fmt::Display;
+use std::str::FromStr;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -39,5 +41,50 @@ impl From<SessionTitle> for String {
 impl From<String> for SessionTitle {
     fn from(title: String) -> Self {
         Self(title)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageId(Uuid);
+
+impl From<MessageId> for Uuid {
+    fn from(id: MessageId) -> Self {
+        id.0
+    }
+}
+
+impl From<Uuid> for MessageId {
+    fn from(id: Uuid) -> Self {
+        Self(id)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MessageRole {
+    System,
+    User,
+    Assistant,
+}
+
+impl Display for MessageRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MessageRole::System => write!(f, "system"),
+            MessageRole::User => write!(f, "user"),
+            MessageRole::Assistant => write!(f, "assistant"),
+        }
+    }
+}
+
+impl FromStr for MessageRole {
+    type Err = ChatSessionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "system" => Ok(MessageRole::System),
+            "user" => Ok(MessageRole::User),
+            "assistant" => Ok(MessageRole::Assistant),
+            _ => Err(ChatSessionError::InvalidRole),
+        }
     }
 }
