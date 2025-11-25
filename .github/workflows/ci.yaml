@@ -15,7 +15,7 @@ jobs:
         image: postgres:18
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
+          POSTGRES_PASSWORD: postgres
           POSTGRES_DB: platform_db
         ports:
           - 5432:5432
@@ -50,15 +50,25 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-build-
 
+      - name: Install sqlx-cli
+        uses: taiki-e/install-action@v2
+        with:
+          tool: sqlx-cli
+
+      - name: Run migrations
+        run: sqlx migrate run --source backend/crates/infra/migrations
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/platform_db
+
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
 
       - name: Run cargo clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
         env:
-          APP_DATABASE__CONNECTION_STRING: postgres://postgres:password@localhost:5432/platform_db
+          APP_DATABASE__CONNECTION_STRING: postgres://postgres:postgres@localhost:5432/platform_db
 
       - name: Run cargo test
         run: cargo test --all
         env:
-          APP_DATABASE__CONNECTION_STRING: postgres://postgres:password@localhost:5432/platform_db
+          APP_DATABASE__CONNECTION_STRING: postgres://postgres:postgres@localhost:5432/platform_db
