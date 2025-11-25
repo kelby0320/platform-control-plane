@@ -1,7 +1,8 @@
 use chrono::{DateTime, Utc};
-use domain::chat::ChatSession;
-use domain::chat::{SessionId, SessionTitle};
+use domain::chat::{ChatMessage, MessageId, MessageRole};
+use domain::chat::{ChatSession, SessionId, SessionTitle};
 use domain::shared::UserId;
+use std::str::FromStr;
 use uuid::Uuid;
 
 #[derive(Debug, sqlx::FromRow)]
@@ -33,6 +34,39 @@ impl From<ChatSessionRow> for ChatSession {
             title: SessionTitle::from(row.title),
             created_at: row.created_at,
             updated_at: row.updated_at,
+        }
+    }
+}
+
+#[derive(Debug, sqlx::FromRow)]
+pub struct ChatMessageRow {
+    pub id: Uuid,
+    pub session_id: Uuid,
+    pub role: String,
+    pub content: String,
+    pub created_at: DateTime<Utc>,
+}
+
+impl From<ChatMessage> for ChatMessageRow {
+    fn from(message: ChatMessage) -> Self {
+        Self {
+            id: message.id.into(),
+            session_id: message.session_id.into(),
+            role: message.role.to_string(),
+            content: message.content,
+            created_at: message.created_at,
+        }
+    }
+}
+
+impl From<ChatMessageRow> for ChatMessage {
+    fn from(row: ChatMessageRow) -> Self {
+        Self {
+            id: MessageId::from(row.id),
+            session_id: SessionId::from(row.session_id),
+            role: MessageRole::from_str(&row.role).unwrap(),
+            content: row.content,
+            created_at: row.created_at,
         }
     }
 }

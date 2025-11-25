@@ -1,7 +1,10 @@
 use crate::routes::health::healthz;
 use axum::{Router, routing::get};
 use domain::chat::service::{ChatSessionService, ChatSessionServiceImpl};
-use infra::{config::Settings, sqlx::chat::repositories::SqlxChatSessionRepository};
+use infra::{
+    config::Settings, sqlx::chat::repositories::SqlxChatMessageRepository,
+    sqlx::chat::repositories::SqlxChatSessionRepository,
+};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
@@ -20,8 +23,12 @@ pub struct App {
 impl App {
     pub async fn build(settings: Settings) -> Result<Self, anyhow::Error> {
         let pool = infra::sqlx::db::get_pool(&settings.database).await?;
-        let chat_session_repo = SqlxChatSessionRepository::new(pool);
-        let chat_session_service = Arc::new(ChatSessionServiceImpl::new(chat_session_repo));
+        let chat_session_repo = SqlxChatSessionRepository::new(pool.clone());
+        let chat_message_repo = SqlxChatMessageRepository::new(pool);
+        let chat_session_service = Arc::new(ChatSessionServiceImpl::new(
+            chat_session_repo,
+            chat_message_repo,
+        ));
 
         let state = AppState {
             chat_session_service,

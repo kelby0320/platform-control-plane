@@ -8,4 +8,6 @@ pub enum ChatSessionError {
     TitleTooLong,
     #[error("Repository failure: {0}")]
     RepoFailure(String),
+    #[error("Invalid message role")]
+    InvalidRole,
 }
