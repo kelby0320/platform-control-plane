@@ -1,5 +1,5 @@
+use infra::config::get_configuration;
 use platform_api::app::App;
-use platform_api::config::get_configuration;
 
 #[tokio::main]
 async fn main() {

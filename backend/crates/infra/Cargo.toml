@@ -6,10 +6,12 @@ edition = "2024"
 [dependencies]
 uuid = { version = "1", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde", "clock"] }
-sqlx = { version = "0.8", features = [
-    "runtime-tokio",
-    "tls-rustls-aws-lc-rs",
-    "postgres",
-    "uuid",
-    "chrono",
-] }
+sqlx = { version = "0.8.6", features = ["runtime-tokio", "tls-rustls-aws-lc-rs", "postgres", "chrono", "uuid", "migrate"] }
+serde = "1.0.228"
+config = "0.15.19"
+async-trait = "0.1.89"
+secrecy = { version = "0.10.3", features = ["serde"] }
+
+domain = { path = "../domain" }
+
+
