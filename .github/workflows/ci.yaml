@@ -50,13 +50,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-build-
 
-      - name: Install sqlx-cli
-        uses: taiki-e/install-action@v2
-        with:
-          tool: sqlx-cli
-
       - name: Run migrations
-        run: sqlx migrate run --source backend/crates/infra/migrations
+        run: |
+          sudo apt install libpq-dev -y
+          cargo install sqlx-cli --version 0.8.6 --no-default-features --features postgres
+          sqlx migrate run --source backend/crates/infra/migrations
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/platform_db
 
