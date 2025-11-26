@@ -1,8 +1,10 @@
 use crate::routes::health::healthz;
 use axum::{Router, routing::get};
+use domain::assistant::service::{AssistantService, AssistantServiceImpl};
 use domain::chat::service::{ChatSessionService, ChatSessionServiceImpl};
 use infra::{
-    config::Settings, sqlx::chat::repositories::SqlxChatMessageRepository,
+    config::Settings, sqlx::assistant::repositories::SqlxAssistantRepository,
+    sqlx::chat::repositories::SqlxChatMessageRepository,
     sqlx::chat::repositories::SqlxChatSessionRepository,
 };
 use std::sync::Arc;
@@ -11,6 +13,7 @@ use tokio::net::TcpListener;
 #[derive(Clone)]
 pub struct AppState {
     pub chat_session_service: Arc<dyn ChatSessionService + Send + Sync>,
+    pub assistant_service: Arc<dyn AssistantService + Send + Sync>,
 }
 
 pub struct App {
@@ -24,19 +27,24 @@ impl App {
     pub async fn build(settings: Settings) -> Result<Self, anyhow::Error> {
         let pool = infra::sqlx::db::get_pool(&settings.database).await?;
         let chat_session_repo = SqlxChatSessionRepository::new(pool.clone());
-        let chat_message_repo = SqlxChatMessageRepository::new(pool);
+        let chat_message_repo = SqlxChatMessageRepository::new(pool.clone());
         let chat_session_service = Arc::new(ChatSessionServiceImpl::new(
             chat_session_repo,
             chat_message_repo,
         ));
 
+        let assistant_repo = SqlxAssistantRepository::new(pool);
+        let assistant_service = Arc::new(AssistantServiceImpl::new(assistant_repo));
+
         let state = AppState {
             chat_session_service,
+            assistant_service,
         };
 
         let router = Router::new()
             .route("/api/v1/healthz", get(healthz))
             .nest("/api/v1/chat", crate::routes::chat::router())
+            .nest("/api/v1/assistants", crate::routes::assistants::router())
             .with_state(state);
 
         let listener = TcpListener::bind(format!(
