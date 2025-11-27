@@ -1,3 +1,4 @@
+use crate::assistant::values::AssistantId;
 use crate::chat::{
     errors::ChatSessionError,
     messages::ChatMessage,
@@ -16,6 +17,7 @@ pub trait ChatSessionService {
         &self,
         user_id: UserId,
         title: SessionTitle,
+        assistant_id: AssistantId,
     ) -> Result<ChatSession, ChatSessionError>;
     async fn get_session(&self, id: SessionId) -> Result<ChatSession, ChatSessionError>;
     async fn add_message(
@@ -52,10 +54,12 @@ impl<S: ChatSessionRepository + Send + Sync, M: ChatMessageRepository + Send + S
         &self,
         user_id: UserId,
         title: SessionTitle,
+        assistant_id: AssistantId,
     ) -> Result<ChatSession, ChatSessionError> {
         let session = ChatSession {
             id: SessionId::from(Uuid::new_v4()),
             user_id,
+            assistant_id,
             title,
             created_at: Utc::now(),
             updated_at: Utc::now(),
@@ -92,9 +96,6 @@ impl<S: ChatSessionRepository + Send + Sync, M: ChatMessageRepository + Send + S
         &self,
         session_id: SessionId,
     ) -> Result<Vec<ChatMessage>, ChatSessionError> {
-        // Verify session exists
-        // self.session_repository.get_by_id(session_id.clone()).await?;
-
         self.message_repository.list_by_session_id(session_id).await
     }
 }

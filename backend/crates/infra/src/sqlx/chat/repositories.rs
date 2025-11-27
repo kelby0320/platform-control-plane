@@ -23,9 +23,10 @@ impl ChatSessionRepository for SqlxChatSessionRepository {
         let row = ChatSessionRow::from(session);
         let row = sqlx::query_as!(
             ChatSessionRow,
-            "INSERT INTO chat_sessions (id, user_id, title) VALUES ($1, $2, $3) RETURNING *",
+            "INSERT INTO chat_sessions (id, user_id, assistant_id, title) VALUES ($1, $2, $3, $4) RETURNING *",
             row.id,
             row.user_id,
+            row.assistant_id,
             row.title,
         )
         .fetch_one(&self.pool)

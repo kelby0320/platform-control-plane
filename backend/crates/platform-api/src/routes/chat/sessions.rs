@@ -6,6 +6,7 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
+use domain::assistant::values::AssistantId;
 use domain::chat::values::{SessionId, SessionTitle};
 use domain::shared::user::UserId;
 use uuid::Uuid;
@@ -28,10 +29,11 @@ pub async fn create_chat_session(
     // TODO: Get user_id from JWT
     let user_id = UserId::from(Uuid::new_v4());
     let title = SessionTitle::from(request.title);
+    let assistant_id = AssistantId::from(request.assistant_id);
 
     match state
         .chat_session_service
-        .create_session(user_id, title)
+        .create_session(user_id, title, assistant_id)
         .await
     {
         Ok(session) => Ok(Json(ChatSessionResponse::from(session))),

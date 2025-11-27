@@ -28,13 +28,14 @@ impl App {
         let pool = infra::sqlx::db::get_pool(&settings.database).await?;
         let chat_session_repo = SqlxChatSessionRepository::new(pool.clone());
         let chat_message_repo = SqlxChatMessageRepository::new(pool.clone());
+
+        let assistant_repo = SqlxAssistantRepository::new(pool);
+        let assistant_service = Arc::new(AssistantServiceImpl::new(assistant_repo));
+
         let chat_session_service = Arc::new(ChatSessionServiceImpl::new(
             chat_session_repo,
             chat_message_repo,
         ));
-
-        let assistant_repo = SqlxAssistantRepository::new(pool);
-        let assistant_service = Arc::new(AssistantServiceImpl::new(assistant_repo));
 
         let state = AppState {
             chat_session_service,

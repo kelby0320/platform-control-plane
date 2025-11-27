@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use domain::assistant::values::AssistantId;
 use domain::chat::{ChatMessage, MessageId, MessageRole};
 use domain::chat::{ChatSession, SessionId, SessionTitle};
 use domain::shared::UserId;
@@ -9,6 +10,7 @@ use uuid::Uuid;
 pub struct ChatSessionRow {
     pub id: Uuid,
     pub user_id: Uuid,
+    pub assistant_id: Uuid,
     pub title: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -19,6 +21,7 @@ impl From<ChatSession> for ChatSessionRow {
         Self {
             id: session.id.into(),
             user_id: session.user_id.into(),
+            assistant_id: session.assistant_id.into(),
             title: session.title.into(),
             created_at: session.created_at,
             updated_at: session.updated_at,
@@ -31,6 +34,7 @@ impl From<ChatSessionRow> for ChatSession {
         Self {
             id: SessionId::from(row.id),
             user_id: UserId::from(row.user_id),
+            assistant_id: AssistantId::from(row.assistant_id),
             title: SessionTitle::from(row.title),
             created_at: row.created_at,
             updated_at: row.updated_at,

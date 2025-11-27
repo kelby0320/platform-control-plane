@@ -12,7 +12,8 @@ async fn test_create_session_and_get_by_id() {
     let response = client
         .post(format!("{}/api/v1/chat/sessions", &app.address))
         .json(&json!({
-            "title": "Test Session"
+            "title": "Test Session",
+            "assistant_id": "733750f6-66bb-4365-abcc-7ee1e989b339"
         }))
         .send()
         .await
@@ -23,6 +24,10 @@ async fn test_create_session_and_get_by_id() {
     let body: serde_json::Value = response.json().await.expect("Failed to parse response");
     let session_id = body["id"].as_str().expect("Missing id in response");
     assert_eq!(body["title"], "Test Session");
+    assert_eq!(
+        body["assistant_id"].as_str().expect("Missing assistant_id"),
+        "733750f6-66bb-4365-abcc-7ee1e989b339"
+    );
 
     // Get session by id
     let response = client
@@ -39,4 +44,8 @@ async fn test_create_session_and_get_by_id() {
     let body: serde_json::Value = response.json().await.expect("Failed to parse response");
     assert_eq!(body["id"], session_id);
     assert_eq!(body["title"], "Test Session");
+    assert_eq!(
+        body["assistant_id"].as_str().expect("Missing assistant_id"),
+        "733750f6-66bb-4365-abcc-7ee1e989b339"
+    );
 }

@@ -13,7 +13,8 @@ async fn test_add_message_and_list() {
     let response = client
         .post(format!("{}/api/v1/chat/sessions", &app.address))
         .json(&json!({
-            "title": "Test Session"
+            "title": "Test Session",
+            "assistant_id": "733750f6-66bb-4365-abcc-7ee1e989b339"
         }))
         .send()
         .await
@@ -66,7 +67,8 @@ async fn test_list_messages_empty_session() {
     let response = client
         .post(format!("{}/api/v1/chat/sessions", &app.address))
         .json(&json!({
-            "title": "Empty Session"
+            "title": "Empty Session",
+            "assistant_id": "733750f6-66bb-4365-abcc-7ee1e989b339"
         }))
         .send()
         .await
