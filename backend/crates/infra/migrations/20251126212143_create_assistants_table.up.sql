@@ -22,7 +22,7 @@ INSERT INTO assistants (
     model_profile_id,
     system_prompt
 ) VALUES (
-    gen_random_uuid(),
+    '733750f6-66bb-4365-abcc-7ee1e989b339',
     'Default Assistant',
     'System default assistant',
     0,

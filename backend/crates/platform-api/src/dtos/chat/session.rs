@@ -6,12 +6,14 @@ use uuid::Uuid;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChatSessionCreateRequest {
     pub title: String,
+    pub assistant_id: Uuid,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChatSessionResponse {
     pub id: Uuid,
     pub user_id: Uuid,
+    pub assistant_id: Uuid,
     pub title: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -22,6 +24,7 @@ impl From<ChatSession> for ChatSessionResponse {
         Self {
             id: session.id.into(),
             user_id: session.user_id.into(),
+            assistant_id: session.assistant_id.into(),
             title: session.title.into(),
             created_at: session.created_at,
             updated_at: session.updated_at,
