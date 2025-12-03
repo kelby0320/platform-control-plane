@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+package aisp.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// =======================
+// Service
+// =======================
+
+service ChatOrchestrator {
+  // PCP -> AISP: run a single chat turn.
+  // AISP -> PCP: stream of events (tokens, state deltas, metrics, done).
+  rpc ChatTurn(ChatTurnRequest) returns (stream ChatEvent);
+}
+
+// =======================
+// Core request types
+// =======================
+
+message ChatTurnRequest {
+  // Correlation IDs
+  string request_id = 1;
+  string session_id = 2;
+  string user_id = 3;
+
+  AssistantConfig assistant = 4;
+  HistoryContext history = 5;
+  UserInput input = 7;
+}
+
+// Configuration resolved by PCP from its Assistant record.
+message AssistantConfig {
+  string assistant_id = 1;
+
+  // Logical model profile identifier that AISP knows how to resolve.
+  string model_profile_id = 2;
+
+ // Logical model profile identifier that AISP knows how to resolve.
+  string graph_profile_id = 3;
+
+  // System / persona prompt for this assistant.
+  string system_prompt = 4;
+}
+
+// Recent history & optional summary as sent by PCP.
+message HistoryContext {
+  // Recent messages (tail) in chronological order.
+  repeated MessageEntry tail = 1;
+}
+
+// One message in the conversation history.
+message MessageEntry {
+  string id = 1;
+  Role role = 2;
+  string content = 3;
+  google.protobuf.Timestamp created_at = 4;
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_USER        = 1;
+  ROLE_ASSISTANT   = 2;
+  ROLE_SYSTEM      = 3;
+}
+
+// The new user turn.
+message UserInput {
+  string message = 1;
+}
+
+// =======================
+// Streaming events
+// =======================
+
+message ChatEvent {
+  oneof payload {
+    TokenChunkEvent       token          = 10;
+    HistoryDeltaEvent     history_delta  = 11;
+    MetricsEvent          metrics        = 12;
+    ErrorEvent            error          = 13;
+    DoneEvent             done           = 14;
+  }
+}
+
+// =======================
+// Event payloads
+// =======================
+
+// Streaming token deltas for the assistant reply.
+message TokenChunkEvent {
+  string content = 1;   // raw text chunk
+  bool   is_first = 2;  // optional, can help with UI
+  bool   is_last  = 3;  // optional, usually implied by DoneEvent
+}
+
+// AISP -> PCP: “here’s how to update your stored context snapshot”.
+message HistoryDeltaEvent {
+  // New messages to append to the session history (usually the assistant msg,
+  // possibly tool messages as well).
+  repeated MessageEntry new_messages = 1;
+}
+
+// AISP -> PCP: token usage, timings, etc.
+message MetricsEvent {
+  uint64 prompt_tokens     = 1;
+  uint64 completion_tokens = 2;
+  uint64 total_tokens      = 3;
+}
+
+// Error during orchestration.
+// PCP can log this and surface a generic message to the user.
+message ErrorEvent {
+  string code    = 1;  // internal / human-friendly code
+  string message = 2;  // debug / log message, not necessarily user-facing
+}
+
+// Marks the end of the stream.
+// You can use this instead of relying only on EOF.
+message DoneEvent {
+}
