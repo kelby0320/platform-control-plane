@@ -4,12 +4,6 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ChatMessageCreateRequest {
-    pub role: String, // "user"
-    pub content: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct ChatMessageResponse {
     pub id: Uuid,
     pub session_id: Uuid,

@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 // ChatSessionRepository implementation
 
+#[derive(Clone)]
 pub struct SqlxChatSessionRepository {
     pool: PgPool,
 }
@@ -51,6 +52,7 @@ impl ChatSessionRepository for SqlxChatSessionRepository {
 
 // ChatMessageRepository implementation
 
+#[derive(Clone)]
 pub struct SqlxChatMessageRepository {
     pool: PgPool,
 }

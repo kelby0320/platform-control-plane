@@ -23,12 +23,7 @@ pub trait ChatSessionService {
         assistant_id: AssistantId,
     ) -> Result<ChatSession, ChatSessionError>;
     async fn get_session(&self, id: SessionId) -> Result<ChatSession, ChatSessionError>;
-    async fn add_message(
-        &self,
-        session_id: SessionId,
-        role: MessageRole,
-        content: String,
-    ) -> Result<ChatMessage, ChatSessionError>;
+
     async fn get_messages(
         &self,
         session_id: SessionId,
@@ -72,27 +67,6 @@ impl<S: ChatSessionRepository + Send + Sync, M: ChatMessageRepository + Send + S
 
     async fn get_session(&self, id: SessionId) -> Result<ChatSession, ChatSessionError> {
         self.session_repository.get_by_id(id).await
-    }
-
-    async fn add_message(
-        &self,
-        session_id: SessionId,
-        role: MessageRole,
-        content: String,
-    ) -> Result<ChatMessage, ChatSessionError> {
-        // Verify session exists
-        self.session_repository
-            .get_by_id(session_id.clone())
-            .await?;
-
-        let message = ChatMessage {
-            id: MessageId::from(Uuid::new_v4()),
-            session_id,
-            role,
-            content,
-            created_at: Utc::now(),
-        };
-        self.message_repository.create(message).await
     }
 
     async fn get_messages(

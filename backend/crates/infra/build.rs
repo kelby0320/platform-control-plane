@@ -8,7 +8,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     config.protoc_arg("--experimental_allow_proto3_optional");
 
     tonic_build::configure()
-        .build_server(false)
+        .build_server(true)
         .build_client(true)
         .compile_protos_with_config(config, &[proto_file], &[proto_dir])?;
     Ok(())

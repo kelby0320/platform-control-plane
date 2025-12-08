@@ -5,6 +5,12 @@ use serde::Deserialize;
 pub struct Settings {
     pub application: ApplicationSettings,
     pub database: DatabaseSettings,
+    pub orchestrator: OrchestratorSettings,
+}
+
+#[derive(Clone, Deserialize)]
+pub struct OrchestratorSettings {
+    pub endpoint: String,
 }
 
 #[derive(Clone, Deserialize)]

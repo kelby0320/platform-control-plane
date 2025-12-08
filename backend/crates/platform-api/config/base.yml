@@ -7,3 +7,5 @@ database:
   port: 5432
   host: "localhost"
   database_name: "platform_db"
+orchestrator:
+  endpoint: "http://localhost:50051"

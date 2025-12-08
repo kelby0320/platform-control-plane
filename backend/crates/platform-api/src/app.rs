@@ -1,18 +1,23 @@
 use crate::routes::health::healthz;
 use axum::{Router, routing::get};
 use domain::assistant::service::{AssistantService, AssistantServiceImpl};
-use domain::chat::service::{ChatSessionService, ChatSessionServiceImpl};
-use infra::{
-    config::Settings, sqlx::assistant::repositories::SqlxAssistantRepository,
-    sqlx::chat::repositories::SqlxChatMessageRepository,
-    sqlx::chat::repositories::SqlxChatSessionRepository,
+use domain::chat::service::{
+    ChatSessionService, ChatSessionServiceImpl, ChatTurnService, ChatTurnServiceImpl,
 };
+use infra::{
+    config::Settings,
+    grpc::orchestrator::client::GrpcChatOrchestratorClient,
+    sqlx::assistant::repositories::SqlxAssistantRepository,
+    sqlx::chat::repositories::{SqlxChatMessageRepository, SqlxChatSessionRepository},
+};
+
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
 #[derive(Clone)]
 pub struct AppState {
     pub chat_session_service: Arc<dyn ChatSessionService + Send + Sync>,
+    pub chat_turn_service: Arc<dyn ChatTurnService + Send + Sync>,
     pub assistant_service: Arc<dyn AssistantService + Send + Sync>,
 }
 
@@ -30,15 +35,27 @@ impl App {
         let chat_message_repo = SqlxChatMessageRepository::new(pool.clone());
 
         let assistant_repo = SqlxAssistantRepository::new(pool);
-        let assistant_service = Arc::new(AssistantServiceImpl::new(assistant_repo));
+        let assistant_service = Arc::new(AssistantServiceImpl::new(assistant_repo.clone()));
 
         let chat_session_service = Arc::new(ChatSessionServiceImpl::new(
+            chat_session_repo.clone(),
+            chat_message_repo.clone(),
+        ));
+
+        let orchestrator_client = GrpcChatOrchestratorClient::new(settings.orchestrator.endpoint)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to create orchestrator client: {}", e))?;
+
+        let chat_turn_service = Arc::new(ChatTurnServiceImpl::new(
+            orchestrator_client,
             chat_session_repo,
             chat_message_repo,
+            assistant_repo,
         ));
 
         let state = AppState {
             chat_session_service,
+            chat_turn_service,
             assistant_service,
         };
 
