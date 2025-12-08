@@ -11,3 +11,11 @@ pub enum ChatSessionError {
     #[error("Invalid message role")]
     InvalidRole,
 }
+
+#[derive(Error, Debug)]
+pub enum ChatTurnError {
+    #[error("Orchestrator error: {0}")]
+    Orchestrator(String),
+    #[error("Internal error: {0}")]
+    Internal(String),
+}

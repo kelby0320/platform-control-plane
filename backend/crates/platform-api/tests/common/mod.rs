@@ -4,6 +4,8 @@ use secrecy::ExposeSecret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use uuid::Uuid;
 
+pub mod orchestrator;
+
 pub struct TestApp {
     pub address: String,
     pub rt: tokio::task::JoinHandle<()>,
@@ -13,6 +15,9 @@ pub async fn spawn_app() -> TestApp {
     let mut configuration = get_configuration().expect("Failed to read configuration.");
     configuration.database.database_name = Uuid::new_v4().to_string();
     configuration.application.port = 0;
+
+    let orchestrator_addr = orchestrator::start_server().await;
+    configuration.orchestrator.endpoint = orchestrator_addr;
 
     configure_database(&configuration.database).await;
 

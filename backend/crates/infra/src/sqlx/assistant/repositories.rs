@@ -4,6 +4,7 @@ use domain::assistant::{Assistant, AssistantError, AssistantId, AssistantReposit
 use sqlx::PgPool;
 use uuid::Uuid;
 
+#[derive(Clone)]
 pub struct SqlxAssistantRepository {
     pool: PgPool,
 }
