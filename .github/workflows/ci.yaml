@@ -2,9 +2,9 @@ name: Rust CI
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: ["main", "develop"]
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: ["main", "develop"]
 
 jobs:
   build-test-lint:
@@ -28,6 +28,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Set up Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -41,7 +43,7 @@ jobs:
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
-      
+
       - name: Install additional dependencies
         run: sudo apt update && sudo apt install -y protobuf-compiler libprotobuf-dev libpq-dev
 
