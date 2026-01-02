@@ -1,5 +1,7 @@
+// use crate::middleware::{RequestId, ensure_request_id};
 use crate::routes::health::healthz;
-use axum::{Router, routing::get};
+use axum::body::Body;
+use axum::{Router, http::Request, http::Response, routing::get};
 use domain::assistant::service::{AssistantService, AssistantServiceImpl};
 use domain::chat::service::{
     ChatSessionService, ChatSessionServiceImpl, ChatTurnService, ChatTurnServiceImpl,
@@ -10,9 +12,14 @@ use infra::{
     sqlx::assistant::repositories::SqlxAssistantRepository,
     sqlx::chat::repositories::{SqlxChatMessageRepository, SqlxChatSessionRepository},
 };
-
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::net::TcpListener;
+use tower_http::request_id::{PropagateRequestIdLayer, SetRequestIdLayer};
+use tower_http::trace::TraceLayer;
+use tracing::{Level, info};
+
+use crate::middleware::request_id::{UuidRequestId, X_REQUEST_ID_HEADER};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -63,6 +70,43 @@ impl App {
             .route("/api/v1/healthz", get(healthz))
             .nest("/api/v1/chat", crate::routes::chat::router())
             .nest("/api/v1/assistants", crate::routes::assistants::router())
+            .layer(SetRequestIdLayer::new(
+                X_REQUEST_ID_HEADER,
+                UuidRequestId::default(),
+            ))
+            .layer(
+                TraceLayer::new_for_http()
+                    .make_span_with(|req: &Request<_>| {
+                        let rid = req
+                            .headers()
+                            .get(X_REQUEST_ID_HEADER)
+                            .and_then(|h| h.to_str().ok())
+                            .unwrap_or("missing");
+
+                        tracing::span!(
+                            Level::INFO,
+                            "http.request",
+                            http.method = %req.method(),
+                            http.route = %req.uri().path(),
+                            request_id = %rid,
+                        )
+                    })
+                    .on_request(|_req: &Request<_>, _span: &tracing::Span| {
+                        // ---- STRUCTURED LOG EVENT (goes to Loki via stdout) ----
+                        info!(event = "request.start");
+                    })
+                    .on_response(
+                        |res: &Response<Body>, latency: Duration, _span: &tracing::Span| {
+                            // ---- STRUCTURED LOG EVENT (goes to Loki via stdout) ----
+                            info!(
+                                event = "request.finish",
+                                http.status_code = res.status().as_u16(),
+                                latency_ms = latency.as_millis() as u64
+                            );
+                        },
+                    ),
+            )
+            .layer(PropagateRequestIdLayer::new(X_REQUEST_ID_HEADER))
             .with_state(state);
 
         let listener = TcpListener::bind(format!(
