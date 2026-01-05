@@ -1,3 +1,4 @@
+use crate::make_middleware_stack;
 use crate::routes::health::healthz;
 use axum::{Router, routing::get};
 use domain::assistant::service::{AssistantService, AssistantServiceImpl};
@@ -10,7 +11,6 @@ use infra::{
     sqlx::assistant::repositories::SqlxAssistantRepository,
     sqlx::chat::repositories::{SqlxChatMessageRepository, SqlxChatSessionRepository},
 };
-
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
@@ -63,6 +63,7 @@ impl App {
             .route("/api/v1/healthz", get(healthz))
             .nest("/api/v1/chat", crate::routes::chat::router())
             .nest("/api/v1/assistants", crate::routes::assistants::router())
+            .layer(make_middleware_stack!())
             .with_state(state);
 
         let listener = TcpListener::bind(format!(

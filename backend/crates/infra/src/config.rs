@@ -6,6 +6,7 @@ pub struct Settings {
     pub application: ApplicationSettings,
     pub database: DatabaseSettings,
     pub orchestrator: OrchestratorSettings,
+    pub tracing: TracingSettings,
 }
 
 #[derive(Clone, Deserialize)]
@@ -26,6 +27,12 @@ pub struct DatabaseSettings {
     pub port: u16,
     pub host: String,
     pub database_name: String,
+}
+
+#[derive(Clone, Deserialize)]
+pub struct TracingSettings {
+    pub enable_tracing: bool,
+    pub otel_exporter_otlp_endpoint: String,
 }
 
 impl DatabaseSettings {

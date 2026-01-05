@@ -1,11 +1,11 @@
 use infra::config::get_configuration;
-use platform_api::app::App;
+use platform_api::{app::App, telemetry};
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
-
     let settings = get_configuration().expect("Failed to load application settings.");
+
+    telemetry::init(&settings).expect("Failed to initialize telemetry");
 
     let app = App::build(settings)
         .await

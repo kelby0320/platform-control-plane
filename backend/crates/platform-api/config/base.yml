@@ -1,6 +1,6 @@
 application:
   host: "0.0.0.0"
-  port: 8080
+  port: 8000
 database:
   username: "postgres"
   password: "postgres"
@@ -9,3 +9,6 @@ database:
   database_name: "platform_db"
 orchestrator:
   endpoint: "http://localhost:50051"
+tracing:
+  enable_tracing: false
+  otel_exporter_otlp_endpoint: ""

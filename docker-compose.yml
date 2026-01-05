@@ -27,9 +27,9 @@ services:
     environment:
       RUST_LOG: info
       APP__APPLICATION_HOST: 0.0.0.0
-      APP__APPLICATION_PORT: 8080
+      APP__APPLICATION_PORT: 8000
     ports:
-      - "8080:8080"
+      - "8000:8000"
     depends_on:
       platform-postgres:
         condition: service_healthy
