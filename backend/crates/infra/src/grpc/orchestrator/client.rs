@@ -3,7 +3,7 @@ use crate::grpc::orchestrator::proto::aisp::v1::chat_orchestrator_client::ChatOr
 use domain::chat::errors::ChatTurnError;
 use domain::chat::port::ChatOrchestratorPort;
 use domain::chat::turn::{ChatEventStream, ChatTurn};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU32, Ordering};
 use tonic::transport::Channel;
 use tracing::instrument;
 
@@ -48,7 +48,7 @@ impl ChatOrchestratorPort for GrpcChatOrchestratorClient {
             .into_inner();
 
         // Map the stream of proto events to domain events
-        let event_count = AtomicU64::new(0);
+        let event_count = AtomicU32::new(0);
         let mapped_stream = async_stream::stream! {
             loop {
                 match stream.message().await {
