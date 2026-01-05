@@ -2,8 +2,20 @@ use axum::http::{HeaderName, Request};
 use tower_http::request_id::{MakeRequestId, RequestId};
 use uuid::Uuid;
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct UuidRequestId(pub Uuid);
+
+impl Default for UuidRequestId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl UuidRequestId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
 
 impl MakeRequestId for UuidRequestId {
     fn make_request_id<B>(&mut self, _req: &Request<B>) -> Option<RequestId> {
@@ -48,12 +60,12 @@ macro_rules! make_middleware_stack {
                 );
 
             ::tower::ServiceBuilder::new()
-                .layer(::tower_http::request_id::PropagateRequestIdLayer::new($crate::middleware::X_REQUEST_ID_HEADER))
-                .layer(trace_layer)
                 .layer(::tower_http::request_id::SetRequestIdLayer::new(
                     $crate::middleware::X_REQUEST_ID_HEADER,
-                    $crate::middleware::UuidRequestId::default(),
+                    $crate::middleware::UuidRequestId::new(),
                 ))
+                .layer(trace_layer)
+                .layer(::tower_http::request_id::PropagateRequestIdLayer::new($crate::middleware::X_REQUEST_ID_HEADER))
         }
     };
 }

@@ -488,6 +488,7 @@ dependencies = [
  "chrono",
  "futures",
  "thiserror 2.0.17",
+ "tracing",
  "uuid",
 ]
 
@@ -1190,6 +1191,7 @@ dependencies = [
  "sqlx",
  "tonic 0.12.3",
  "tonic-build",
+ "tracing",
  "uuid",
 ]
 

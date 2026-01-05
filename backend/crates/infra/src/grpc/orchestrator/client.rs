@@ -3,7 +3,9 @@ use crate::grpc::orchestrator::proto::aisp::v1::chat_orchestrator_client::ChatOr
 use domain::chat::errors::ChatTurnError;
 use domain::chat::port::ChatOrchestratorPort;
 use domain::chat::turn::{ChatEventStream, ChatTurn};
+use std::sync::atomic::{AtomicU64, Ordering};
 use tonic::transport::Channel;
+use tracing::instrument;
 
 pub struct GrpcChatOrchestratorClient {
     client: ChatOrchestratorClient<Channel>,
@@ -26,6 +28,12 @@ impl GrpcChatOrchestratorClient {
 
 #[async_trait::async_trait]
 impl ChatOrchestratorPort for GrpcChatOrchestratorClient {
+    #[instrument(
+        name = "grpc_chat_orchestrator_client.start_chat_turn",
+        level = "INFO",
+        skip_all,
+        err
+    )]
     async fn start_chat_turn(&self, turn: ChatTurn) -> Result<ChatEventStream, ChatTurnError> {
         // Convert domain ChatTurn to proto ChatTurnRequest
         let request = build_proto_request(turn);
@@ -40,17 +48,32 @@ impl ChatOrchestratorPort for GrpcChatOrchestratorClient {
             .into_inner();
 
         // Map the stream of proto events to domain events
+        let event_count = AtomicU64::new(0);
         let mapped_stream = async_stream::stream! {
             loop {
                 match stream.message().await {
                     Ok(Some(proto_event)) => {
+                        event_count.fetch_add(1, Ordering::Relaxed);
                         match map_proto_event(proto_event) {
                             Ok(domain_event) => yield Ok(domain_event),
                             Err(e) => yield Err(ChatTurnError::Orchestrator(format!("Failed to map proto event: {}", e))),
                         }
                     }
-                    Ok(None) => break, // Stream ended
+                    Ok(None) => {
+                        // Stream ended
+                        let count = event_count.load(Ordering::Relaxed);
+                        tracing::debug!(
+                            event = "grpc_chat_orchestrator_client.start_chat_turn",
+                            event_count = count
+                        );
+                        break;
+                    }
                     Err(e) => {
+                        let count = event_count.load(Ordering::Relaxed);
+                        tracing::debug!(
+                            event = "grpc_chat_orchestrator_client.start_chat_turn",
+                            event_count = count
+                        );
                         yield Err(ChatTurnError::Orchestrator(format!("gRPC stream error: {}", e)));
                         break;
                     }

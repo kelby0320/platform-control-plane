@@ -12,12 +12,4 @@ async fn main() {
         .expect("Failed to build application.");
 
     app.run().await;
-
-    // If OTEL enabled, shut down tracer cleanly.
-    // let enable_tracing = std::env::var("ENABLE_OTEL_TRACING")
-    //     .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
-    //     .unwrap_or(false);
-    // if enable_tracing {
-    //     opentelemetry::global::shutdown_tracer_provider();
-    // }
 }

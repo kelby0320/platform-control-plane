@@ -3,6 +3,8 @@ use crate::assistant::errors::AssistantError;
 use crate::assistant::repositories::AssistantRepository;
 use crate::assistant::values::AssistantId;
 use async_trait::async_trait;
+use tracing::instrument;
+use uuid::Uuid;
 
 #[async_trait]
 pub trait AssistantService {
@@ -22,11 +24,24 @@ impl<R: AssistantRepository> AssistantServiceImpl<R> {
 
 #[async_trait]
 impl<R: AssistantRepository + Send + Sync> AssistantService for AssistantServiceImpl<R> {
+    #[instrument(name = "get_assistant", level = "INFO", skip_all, err)]
     async fn get_assistant(&self, id: AssistantId) -> Result<Assistant, AssistantError> {
-        self.repository.get_by_id(id).await
+        let assistant = self.repository.get_by_id(id).await?;
+        tracing::debug!(
+            event = "assistant.get_assistant",
+            id = String::from(Uuid::from(assistant.id.clone())),
+            name = String::from(assistant.name.clone()),
+        );
+        Ok(assistant)
     }
 
+    #[instrument(name = "list_assistants", level = "INFO", skip_all, err)]
     async fn list_assistants(&self) -> Result<Vec<Assistant>, AssistantError> {
-        self.repository.list_all().await
+        let assistants = self.repository.list_all().await?;
+        tracing::debug!(
+            event = "assistant.list_assistants",
+            count = assistants.len()
+        );
+        Ok(assistants)
     }
 }

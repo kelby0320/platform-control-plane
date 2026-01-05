@@ -2,6 +2,7 @@ use crate::sqlx::assistant::AssistantRow;
 use async_trait::async_trait;
 use domain::assistant::{Assistant, AssistantError, AssistantId, AssistantRepository};
 use sqlx::PgPool;
+use tracing::instrument;
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -17,6 +18,7 @@ impl SqlxAssistantRepository {
 
 #[async_trait]
 impl AssistantRepository for SqlxAssistantRepository {
+    #[instrument(name = "assistant_repository.create", level = "INFO", skip_all, err)]
     async fn create(&self, assistant: Assistant) -> Result<Assistant, AssistantError> {
         let row = AssistantRow::from(assistant);
         let row = sqlx::query_as!(
@@ -34,18 +36,30 @@ impl AssistantRepository for SqlxAssistantRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(|_| AssistantError::RepoFailure("Failed to create assistant".to_string()))?;
+        tracing::debug!(
+            event = "assistant_repository.create",
+            id = String::from(row.id),
+            name = row.name.clone(),
+        );
         Ok(row.into())
     }
 
+    #[instrument(name = "assistant_repository.get_by_id", level = "INFO", skip_all, err)]
     async fn get_by_id(&self, id: AssistantId) -> Result<Assistant, AssistantError> {
         let id: Uuid = id.into();
         let row = sqlx::query_as!(AssistantRow, "SELECT * FROM assistants WHERE id = $1", id,)
             .fetch_one(&self.pool)
             .await
             .map_err(|_| AssistantError::NotFound)?;
+        tracing::debug!(
+            event = "assistant_repository.get_by_id",
+            id = String::from(row.id),
+            name = row.name.clone(),
+        );
         Ok(row.into())
     }
 
+    #[instrument(name = "assistant_repository.list_all", level = "INFO", skip_all, err)]
     async fn list_all(&self) -> Result<Vec<Assistant>, AssistantError> {
         let rows = sqlx::query_as!(
             AssistantRow,
@@ -55,6 +69,8 @@ impl AssistantRepository for SqlxAssistantRepository {
         .await
         .map_err(|_| AssistantError::RepoFailure("Failed to list assistants".to_string()))?;
 
+        let count = rows.len();
+        tracing::debug!(event = "assistant_repository.list_all", count = count);
         Ok(rows.into_iter().map(|row| row.into()).collect())
     }
 }

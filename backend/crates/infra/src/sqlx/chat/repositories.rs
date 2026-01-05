@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use domain::chat::{ChatMessage, ChatMessageRepository};
 use domain::chat::{ChatSession, ChatSessionError, ChatSessionRepository, SessionId};
 use sqlx::PgPool;
+use tracing::instrument;
 use uuid::Uuid;
 
 // ChatSessionRepository implementation
@@ -20,6 +21,7 @@ impl SqlxChatSessionRepository {
 
 #[async_trait]
 impl ChatSessionRepository for SqlxChatSessionRepository {
+    #[instrument(name = "chat_session_repository.create", level = "INFO", skip_all, err)]
     async fn create(&self, session: ChatSession) -> Result<ChatSession, ChatSessionError> {
         let row = ChatSessionRow::from(session);
         let row = sqlx::query_as!(
@@ -33,9 +35,20 @@ impl ChatSessionRepository for SqlxChatSessionRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(|_| ChatSessionError::RepoFailure("Failed to create chat session".to_string()))?;
+        tracing::debug!(
+            event = "chat_session_repository.create",
+            id = String::from(row.id),
+            title = row.title.clone(),
+        );
         Ok(row.into())
     }
 
+    #[instrument(
+        name = "chat_session_repository.get_by_id",
+        level = "INFO",
+        skip_all,
+        err
+    )]
     async fn get_by_id(&self, id: SessionId) -> Result<ChatSession, ChatSessionError> {
         let id: Uuid = id.into();
         let row = sqlx::query_as!(
@@ -46,6 +59,11 @@ impl ChatSessionRepository for SqlxChatSessionRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(|_| ChatSessionError::NotFound)?;
+        tracing::debug!(
+            event = "chat_session_repository.get_by_id",
+            id = String::from(row.id),
+            title = row.title.clone(),
+        );
         Ok(row.into())
     }
 }
@@ -65,6 +83,7 @@ impl SqlxChatMessageRepository {
 
 #[async_trait]
 impl ChatMessageRepository for SqlxChatMessageRepository {
+    #[instrument(name = "chat_message_repository.create", level = "INFO", skip_all, err)]
     async fn create(&self, message: ChatMessage) -> Result<ChatMessage, ChatSessionError> {
         let row = ChatMessageRow::from(message);
         let row = sqlx::query_as!(
@@ -79,9 +98,20 @@ impl ChatMessageRepository for SqlxChatMessageRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(|_| ChatSessionError::RepoFailure("Failed to create chat message".to_string()))?;
+        tracing::debug!(
+            event = "chat_message_repository.create",
+            id = String::from(row.id),
+            session_id = String::from(row.session_id),
+        );
         Ok(row.into())
     }
 
+    #[instrument(
+        name = "chat_message_repository.list_by_session_id",
+        level = "INFO",
+        skip_all,
+        err
+    )]
     async fn list_by_session_id(
         &self,
         session_id: SessionId,
@@ -96,6 +126,11 @@ impl ChatMessageRepository for SqlxChatMessageRepository {
         .await
         .map_err(|_| ChatSessionError::RepoFailure("Failed to list chat messages".to_string()))?;
 
+        let count = rows.len();
+        tracing::debug!(
+            event = "chat_message_repository.list_by_session_id",
+            count = count
+        );
         Ok(rows.into_iter().map(|row| row.into()).collect())
     }
 }

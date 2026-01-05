@@ -12,6 +12,7 @@ use crate::chat::{
 use crate::shared::user::UserId;
 use async_trait::async_trait;
 use chrono::Utc;
+use tracing::instrument;
 use uuid::Uuid;
 
 #[async_trait]
@@ -48,6 +49,7 @@ impl<S: ChatSessionRepository, M: ChatMessageRepository> ChatSessionServiceImpl<
 impl<S: ChatSessionRepository + Send + Sync, M: ChatMessageRepository + Send + Sync>
     ChatSessionService for ChatSessionServiceImpl<S, M>
 {
+    #[instrument(name = "create_session", level = "INFO", skip_all, err)]
     async fn create_session(
         &self,
         user_id: UserId,
@@ -58,22 +60,41 @@ impl<S: ChatSessionRepository + Send + Sync, M: ChatMessageRepository + Send + S
             id: SessionId::from(Uuid::new_v4()),
             user_id,
             assistant_id,
-            title,
+            title: title.clone(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
-        self.session_repository.create(session).await
+        let session = self.session_repository.create(session).await?;
+        tracing::debug!(
+            event = "chat.create_session",
+            id = String::from(Uuid::from(session.id.clone())),
+            title = String::from(session.title.clone()),
+        );
+        Ok(session)
     }
 
+    #[instrument(name = "get_session", level = "INFO", skip_all, err)]
     async fn get_session(&self, id: SessionId) -> Result<ChatSession, ChatSessionError> {
-        self.session_repository.get_by_id(id).await
+        let session = self.session_repository.get_by_id(id).await?;
+        tracing::debug!(
+            event = "chat.get_session",
+            id = String::from(Uuid::from(session.id.clone())),
+            title = String::from(session.title.clone()),
+        );
+        Ok(session)
     }
 
+    #[instrument(name = "get_messages", level = "INFO", skip_all, err)]
     async fn get_messages(
         &self,
         session_id: SessionId,
     ) -> Result<Vec<ChatMessage>, ChatSessionError> {
-        self.message_repository.list_by_session_id(session_id).await
+        let messages = self
+            .message_repository
+            .list_by_session_id(session_id)
+            .await?;
+        tracing::debug!(event = "chat.get_messages", count = messages.len());
+        Ok(messages)
     }
 }
 
@@ -129,6 +150,7 @@ impl<
     A: AssistantRepository + Send + Sync,
 > ChatTurnService for ChatTurnServiceImpl<O, S, M, A>
 {
+    #[instrument(name = "start_turn", level = "INFO", skip_all, err)]
     async fn start_turn(
         &self,
         session_id: SessionId,
@@ -168,7 +190,7 @@ impl<
         // Fetch message history
         let history_tail = self
             .message_repository
-            .list_by_session_id(session_id)
+            .list_by_session_id(session_id.clone())
             .await
             .map_err(|e| {
                 ChatTurnError::Internal(format!("Failed to fetch message history: {}", e))
@@ -183,6 +205,12 @@ impl<
         };
 
         // Call the orchestrator
-        self.orchestrator.start_chat_turn(turn).await
+        let stream = self.orchestrator.start_chat_turn(turn).await?;
+        tracing::debug!(
+            event = "chat.start_turn",
+            session_id = String::from(Uuid::from(session_id)),
+            user_id = String::from(Uuid::from(user_id)),
+        );
+        Ok(stream)
     }
 }
