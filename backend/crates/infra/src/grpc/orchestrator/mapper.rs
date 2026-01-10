@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use crate::grpc::orchestrator::proto::aisp::v1::{
     AssistantConfig, ChatEvent as ProtoChatEvent, ChatTurnRequest, HistoryContext, MessageEntry,
-    Role as ProtoRole, UserInput, chat_event::Payload,
+    ModelBinding, Role as ProtoRole, UserInput, chat_event::Payload,
 };
 
 use domain::chat::turn::ChatTurn;
@@ -22,8 +22,11 @@ pub fn build_proto_request(turn: ChatTurn) -> ChatTurnRequest {
 
     let assistant_config = AssistantConfig {
         assistant_id: Uuid::from(turn.assistant.id).to_string(),
-        model_profile_id: Uuid::from(turn.assistant.model_profile_id).to_string(),
         graph_profile_id: Uuid::from(turn.assistant.graph_profile_id).to_string(),
+        model_bindings: vec![ModelBinding {
+            slot_name: "default".to_string(),
+            model_profile_id: Uuid::from(turn.assistant.model_profile_id).to_string(),
+        }],
         system_prompt: turn.assistant.system_prompt,
     };
 
