@@ -23,10 +23,15 @@ pub fn build_proto_request(turn: ChatTurn) -> ChatTurnRequest {
     let assistant_config = AssistantConfig {
         assistant_id: Uuid::from(turn.assistant.id).to_string(),
         graph_profile_id: Uuid::from(turn.assistant.graph_profile_id).to_string(),
-        model_bindings: vec![ModelBinding {
-            slot_name: "default".to_string(),
-            model_profile_id: Uuid::from(turn.assistant.model_profile_id).to_string(),
-        }],
+        model_bindings: turn
+            .assistant
+            .model_bindings
+            .into_iter()
+            .map(|b| ModelBinding {
+                slot_name: b.slot_name,
+                model_profile_id: Uuid::from(b.model_profile_id).to_string(),
+            })
+            .collect(),
         system_prompt: turn.assistant.system_prompt,
     };
 
