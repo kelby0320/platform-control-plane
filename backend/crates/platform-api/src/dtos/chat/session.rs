@@ -31,3 +31,12 @@ impl From<ChatSession> for ChatSessionResponse {
         }
     }
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChatSessionListResponse {
+    pub total_items: i64,
+    pub total_pages: i64,
+    pub current_page: i64,
+    pub page_size: i64,
+    pub sessions: Vec<ChatSessionResponse>,
+}

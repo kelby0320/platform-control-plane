@@ -16,7 +16,7 @@ pub fn init(settings: &Settings) -> Result<(), Box<dyn std::error::Error + Send 
     let filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| "info,tower_http=info".into());
 
-    if settings.tracing.enable_tracing {
+    if settings.tracing.enabled {
         let endpoint = &settings.tracing.otel_exporter_otlp_endpoint;
 
         let otel_exporter = opentelemetry_otlp::SpanExporter::builder()

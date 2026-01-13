@@ -9,6 +9,7 @@ use crate::chat::{
     turn::{ChatEventStream, ChatTurn},
     values::{MessageId, MessageRole, SessionId, SessionTitle},
 };
+use crate::shared::Paginated;
 use crate::shared::user::UserId;
 use async_trait::async_trait;
 use chrono::Utc;
@@ -24,6 +25,11 @@ pub trait ChatSessionService {
         assistant_id: AssistantId,
     ) -> Result<ChatSession, ChatSessionError>;
     async fn get_session(&self, id: SessionId) -> Result<ChatSession, ChatSessionError>;
+    async fn list_sessions(
+        &self,
+        page: i64,
+        page_size: i64,
+    ) -> Result<Paginated<ChatSession>, ChatSessionError>;
 
     async fn get_messages(
         &self,
@@ -82,6 +88,22 @@ impl<S: ChatSessionRepository + Send + Sync, M: ChatMessageRepository + Send + S
             title = String::from(session.title.clone()),
         );
         Ok(session)
+    }
+
+    #[instrument(name = "list_sessions", level = "INFO", skip_all, err)]
+    async fn list_sessions(
+        &self,
+        page: i64,
+        page_size: i64,
+    ) -> Result<Paginated<ChatSession>, ChatSessionError> {
+        let offset = (page - 1) * page_size;
+        let paginated = self.session_repository.list(offset, page_size).await?;
+        tracing::debug!(
+            event = "chat.list_sessions",
+            count = paginated.items.len(),
+            total = paginated.total_items
+        );
+        Ok(paginated)
     }
 
     #[instrument(name = "get_messages", level = "INFO", skip_all, err)]

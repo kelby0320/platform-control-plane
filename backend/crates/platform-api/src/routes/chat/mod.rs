@@ -9,7 +9,10 @@ use axum::{
 
 pub fn router() -> Router<crate::app::AppState> {
     Router::new()
-        .route("/sessions", post(sessions::create_chat_session))
+        .route(
+            "/sessions",
+            get(sessions::list_chat_sessions).post(sessions::create_chat_session),
+        )
         .route("/sessions/{session_id}", get(sessions::get_chat_session))
         .route(
             "/sessions/{session_id}/messages",

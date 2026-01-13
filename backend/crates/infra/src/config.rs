@@ -26,12 +26,12 @@ pub struct DatabaseSettings {
     pub password: SecretString,
     pub port: u16,
     pub host: String,
-    pub database_name: String,
+    pub name: String,
 }
 
 #[derive(Clone, Deserialize)]
 pub struct TracingSettings {
-    pub enable_tracing: bool,
+    pub enabled: bool,
     pub otel_exporter_otlp_endpoint: String,
 }
 
@@ -43,7 +43,7 @@ impl DatabaseSettings {
             self.password.expose_secret(),
             self.host,
             self.port,
-            self.database_name
+            self.name
         ))
     }
 
@@ -60,11 +60,11 @@ impl DatabaseSettings {
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let builder: config::ConfigBuilder<config::builder::DefaultState> = config::Config::builder()
-        .add_source(config::File::with_name("config/base").required(false))
+        // .add_source(config::File::with_name("config/base").required(false))
         .add_source(
-            config::Environment::with_prefix("APP")
+            config::Environment::with_prefix("PLATFORM_API")
                 .prefix_separator("__")
-                .separator("_"),
+                .separator("__"),
         );
 
     builder.build()?.try_deserialize()

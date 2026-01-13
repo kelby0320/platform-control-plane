@@ -12,7 +12,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -26,8 +26,16 @@ services:
     restart: unless-stopped
     environment:
       RUST_LOG: info
-      APP__APPLICATION_HOST: 0.0.0.0
-      APP__APPLICATION_PORT: 8000
+      PLATFORM_API__APPLICATION__HOST: 0.0.0.0
+      PLATFORM_API__APPLICATION__PORT: 8000
+      PLATFORM_API__DATABASE__USERNAME: postgres
+      PLATFORM_API__DATABASE__PASSWORD: postgres
+      PLATFORM_API__DATABASE__PORT: 5432
+      PLATFORM_API__DATABASE__HOST: host.docker.internal
+      PLATFORM_API__DATABASE__NAME: platform_db
+      PLATFORM_API__ORCHESTRATOR__ENDPOINT: "http://host.docker.internal:50051"
+      PLATFORM_API__TRACING__ENABLED: false
+      PLATFORM_API__TRACING__OTEL_EXPORTER_OTLP_ENDPOINT: ""
     ports:
       - "8000:8000"
     depends_on:
