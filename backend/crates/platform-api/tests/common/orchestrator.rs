@@ -28,8 +28,6 @@ impl ChatOrchestrator for MockChatOrchestrator {
                     payload: Some(chat_event::Payload::Token(
                         TokenChunkEvent {
                             content: chunk.to_string(),
-                            is_first: false,
-                            is_last: false,
                         }
                     ))
                 };

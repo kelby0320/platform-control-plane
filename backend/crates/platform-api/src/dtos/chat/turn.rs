@@ -17,6 +17,4 @@ impl ChatTurnEventType {
 #[derive(Debug, Serialize)]
 pub struct ChatTurnTokenChunkData {
     pub content: String,
-    pub is_first: bool,
-    pub is_last: bool,
 }

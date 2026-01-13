@@ -16,8 +16,6 @@ pub struct ChatTurn {
 #[derive(Debug, Clone)]
 pub struct TokenChunk {
     pub text: String,
-    pub is_first: bool,
-    pub is_last: bool,
 }
 
 #[derive(Debug, Clone)]

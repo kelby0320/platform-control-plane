@@ -4,6 +4,12 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct ModelBindingResponse {
+    pub slot_name: String,
+    pub model_profile_id: Uuid,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AssistantResponse {
     pub id: Uuid,
     pub name: String,
@@ -11,7 +17,7 @@ pub struct AssistantResponse {
     pub version_major: i32,
     pub version_minor: i32,
     pub graph_profile_id: Uuid,
-    pub model_profile_id: Uuid,
+    pub model_bindings: Vec<ModelBindingResponse>,
     pub system_prompt: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -26,7 +32,14 @@ impl From<Assistant> for AssistantResponse {
             version_major: assistant.version_major,
             version_minor: assistant.version_minor,
             graph_profile_id: assistant.graph_profile_id.into(),
-            model_profile_id: assistant.model_profile_id.into(),
+            model_bindings: assistant
+                .model_bindings
+                .into_iter()
+                .map(|mb| ModelBindingResponse {
+                    slot_name: mb.slot_name,
+                    model_profile_id: mb.model_profile_id.into(),
+                })
+                .collect(),
             system_prompt: assistant.system_prompt,
             created_at: assistant.created_at,
             updated_at: assistant.updated_at,

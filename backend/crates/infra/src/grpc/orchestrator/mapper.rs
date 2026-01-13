@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use crate::grpc::orchestrator::proto::aisp::v1::{
     AssistantConfig, ChatEvent as ProtoChatEvent, ChatTurnRequest, HistoryContext, MessageEntry,
-    Role as ProtoRole, UserInput, chat_event::Payload,
+    ModelBinding, Role as ProtoRole, UserInput, chat_event::Payload,
 };
 
 use domain::chat::turn::ChatTurn;
@@ -22,8 +22,16 @@ pub fn build_proto_request(turn: ChatTurn) -> ChatTurnRequest {
 
     let assistant_config = AssistantConfig {
         assistant_id: Uuid::from(turn.assistant.id).to_string(),
-        model_profile_id: Uuid::from(turn.assistant.model_profile_id).to_string(),
         graph_profile_id: Uuid::from(turn.assistant.graph_profile_id).to_string(),
+        model_bindings: turn
+            .assistant
+            .model_bindings
+            .into_iter()
+            .map(|b| ModelBinding {
+                slot_name: b.slot_name,
+                model_profile_id: Uuid::from(b.model_profile_id).to_string(),
+            })
+            .collect(),
         system_prompt: turn.assistant.system_prompt,
     };
 
@@ -84,8 +92,6 @@ pub fn map_proto_event(event: ProtoChatEvent) -> Result<ChatEvent, String> {
     match event.payload {
         Some(Payload::Token(token_event)) => Ok(ChatEvent::Token(TokenChunk {
             text: token_event.content,
-            is_first: token_event.is_first,
-            is_last: token_event.is_last,
         })),
         Some(Payload::HistoryDelta(history_delta)) => {
             let new_messages = history_delta
