@@ -60,7 +60,7 @@ impl DatabaseSettings {
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let builder: config::ConfigBuilder<config::builder::DefaultState> = config::Config::builder()
-        // .add_source(config::File::with_name("config/base").required(false))
+        .add_source(config::File::with_name("config/base").required(false))
         .add_source(
             config::Environment::with_prefix("PLATFORM_API")
                 .prefix_separator("__")
