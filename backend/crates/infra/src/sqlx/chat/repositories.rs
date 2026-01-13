@@ -2,6 +2,7 @@ use crate::sqlx::chat::{ChatMessageRow, ChatSessionRow};
 use async_trait::async_trait;
 use domain::chat::{ChatMessage, ChatMessageRepository};
 use domain::chat::{ChatSession, ChatSessionError, ChatSessionRepository, SessionId};
+use domain::shared::Paginated;
 use sqlx::PgPool;
 use tracing::instrument;
 use uuid::Uuid;
@@ -65,6 +66,36 @@ impl ChatSessionRepository for SqlxChatSessionRepository {
             title = row.title.clone(),
         );
         Ok(row.into())
+    }
+
+    #[instrument(name = "chat_session_repository.list", level = "INFO", skip_all, err)]
+    async fn list(
+        &self,
+        offset: i64,
+        limit: i64,
+    ) -> Result<Paginated<ChatSession>, ChatSessionError> {
+        let rows = sqlx::query_as!(
+            ChatSessionRow,
+            "SELECT * FROM chat_sessions ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+            limit,
+            offset
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|_| ChatSessionError::RepoFailure("Failed to list chat sessions".to_string()))?;
+
+        let count_row = sqlx::query!("SELECT COUNT(*) as count FROM chat_sessions")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|_| {
+                ChatSessionError::RepoFailure("Failed to count chat sessions".to_string())
+            })?;
+
+        let total_items = count_row.count.unwrap_or(0);
+
+        let items = rows.into_iter().map(|row| row.into()).collect();
+
+        Ok(Paginated { items, total_items })
     }
 }
 

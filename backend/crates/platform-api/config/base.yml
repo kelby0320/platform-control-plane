@@ -6,9 +6,9 @@ database:
   password: "postgres"
   port: 5432
   host: "localhost"
-  database_name: "platform_db"
+  name: "platform_db"
 orchestrator:
   endpoint: "http://localhost:50051"
 tracing:
-  enable_tracing: false
+  enabled: false
   otel_exporter_otlp_endpoint: ""

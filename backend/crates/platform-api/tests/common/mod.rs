@@ -13,7 +13,7 @@ pub struct TestApp {
 
 pub async fn spawn_app() -> TestApp {
     let mut configuration = get_configuration().expect("Failed to read configuration.");
-    configuration.database.database_name = Uuid::new_v4().to_string();
+    configuration.database.name = Uuid::new_v4().to_string();
     configuration.application.port = 0;
 
     let orchestrator_addr = orchestrator::start_server().await;
@@ -43,7 +43,7 @@ async fn configure_database(config: &DatabaseSettings) -> PgPool {
             .await
             .expect("Failed to connect to Postgres");
     connection
-        .execute(format!(r#"CREATE DATABASE "{}";"#, config.database_name).as_str())
+        .execute(format!(r#"CREATE DATABASE "{}";"#, config.name).as_str())
         .await
         .expect("Failed to create database.");
 
