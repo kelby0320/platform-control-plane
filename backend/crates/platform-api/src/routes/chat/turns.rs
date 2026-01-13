@@ -48,8 +48,6 @@ pub async fn new_chat_turn(
                 Ok(ChatEvent::Token(chunk)) => {
                     let data = ChatTurnTokenChunkData {
                         content: chunk.text,
-                        is_first: chunk.is_first,
-                        is_last: chunk.is_last,
                     };
                     Event::default()
                         .event(ChatTurnEventType::TOKEN_CHUNK)

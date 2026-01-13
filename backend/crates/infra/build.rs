@@ -1,7 +1,7 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Proto files are at workspace root, so go up 3 levels from backend/crates/infra
-    let proto_dir = "../../../platform-contracts/proto";
-    let proto_file = "../../../platform-contracts/proto/aisp/v1/chat_orchestrator.proto";
+    let proto_dir = "../../../platform-apis/proto";
+    let proto_file = "../../../platform-apis/proto/aisp/v1/chat_orchestrator.proto";
 
     // Configure prost-build
     let mut config = prost_build::Config::new();

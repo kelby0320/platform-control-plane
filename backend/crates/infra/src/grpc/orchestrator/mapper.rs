@@ -92,8 +92,6 @@ pub fn map_proto_event(event: ProtoChatEvent) -> Result<ChatEvent, String> {
     match event.payload {
         Some(Payload::Token(token_event)) => Ok(ChatEvent::Token(TokenChunk {
             text: token_event.content,
-            is_first: token_event.is_first,
-            is_last: token_event.is_last,
         })),
         Some(Payload::HistoryDelta(history_delta)) => {
             let new_messages = history_delta
