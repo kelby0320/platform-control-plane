@@ -9,12 +9,33 @@ use axum::{
 use domain::chat::values::SessionId;
 use uuid::Uuid;
 
+use axum::extract::Query;
+use domain::chat::values::MessageId;
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+pub struct PaginationParams {
+    #[serde(default = "default_limit")]
+    pub limit: i64,
+    pub before_id: Option<Uuid>,
+}
+
+fn default_limit() -> i64 {
+    20
+}
+
 pub async fn get_chat_messages(
     State(state): State<AppState>,
     Path(session_id): Path<Uuid>,
+    Query(params): Query<PaginationParams>,
 ) -> Result<Json<ChatMessageListResponse>, impl IntoResponse> {
     let session_id = SessionId::from(session_id);
-    match state.chat_session_service.get_messages(session_id).await {
+    let before_id = params.before_id.map(MessageId::from);
+    match state
+        .chat_session_service
+        .get_messages(session_id, params.limit, before_id)
+        .await
+    {
         Ok(messages) => {
             let response = ChatMessageListResponse {
                 messages: messages

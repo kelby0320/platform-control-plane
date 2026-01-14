@@ -19,8 +19,10 @@ pub trait ChatSessionRepository {
 #[async_trait]
 pub trait ChatMessageRepository {
     async fn create(&self, message: ChatMessage) -> Result<ChatMessage, ChatSessionError>;
-    async fn list_by_session_id(
+    async fn list_messages(
         &self,
         session_id: SessionId,
+        limit: i64,
+        before_id: Option<crate::chat::values::MessageId>,
     ) -> Result<Vec<ChatMessage>, ChatSessionError>;
 }

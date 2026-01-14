@@ -34,6 +34,8 @@ pub trait ChatSessionService {
     async fn get_messages(
         &self,
         session_id: SessionId,
+        limit: i64,
+        before_id: Option<MessageId>,
     ) -> Result<Vec<ChatMessage>, ChatSessionError>;
 }
 
@@ -110,10 +112,12 @@ impl<S: ChatSessionRepository + Send + Sync, M: ChatMessageRepository + Send + S
     async fn get_messages(
         &self,
         session_id: SessionId,
+        limit: i64,
+        before_id: Option<MessageId>,
     ) -> Result<Vec<ChatMessage>, ChatSessionError> {
         let messages = self
             .message_repository
-            .list_by_session_id(session_id)
+            .list_messages(session_id, limit, before_id)
             .await?;
         tracing::debug!(event = "chat.get_messages", count = messages.len());
         Ok(messages)
@@ -210,9 +214,10 @@ impl<
         };
 
         // Fetch message history
+        // Fetch up to 50 recent messages for context
         let history_tail = self
             .message_repository
-            .list_by_session_id(session_id.clone())
+            .list_messages(session_id.clone(), 50, None)
             .await
             .map_err(|e| {
                 ChatTurnError::Internal(format!("Failed to fetch message history: {}", e))

@@ -1,5 +1,6 @@
 use crate::sqlx::chat::{ChatMessageRow, ChatSessionRow};
 use async_trait::async_trait;
+use domain::chat::values::MessageId;
 use domain::chat::{ChatMessage, ChatMessageRepository};
 use domain::chat::{ChatSession, ChatSessionError, ChatSessionRepository, SessionId};
 use domain::shared::Paginated;
@@ -138,30 +139,68 @@ impl ChatMessageRepository for SqlxChatMessageRepository {
     }
 
     #[instrument(
-        name = "chat_message_repository.list_by_session_id",
+        name = "chat_message_repository.list_messages",
         level = "INFO",
         skip_all,
         err
     )]
-    async fn list_by_session_id(
+    async fn list_messages(
         &self,
         session_id: SessionId,
+        limit: i64,
+        before_id: Option<MessageId>,
     ) -> Result<Vec<ChatMessage>, ChatSessionError> {
         let session_id: Uuid = session_id.into();
-        let rows = sqlx::query_as!(
-            ChatMessageRow,
-            "SELECT * FROM chat_messages WHERE session_id = $1 ORDER BY created_at ASC",
-            session_id,
-        )
-        .fetch_all(&self.pool)
-        .await
+        let rows = match before_id {
+            Some(cursor_id) => {
+                let cursor_id: Uuid = cursor_id.into();
+                sqlx::query_as!(
+                    ChatMessageRow,
+                    r#"
+                    SELECT id, session_id, role, content, created_at
+                    FROM chat_messages
+                    WHERE 
+                        session_id = $1
+                        AND (created_at, id) < (
+                            SELECT created_at, id 
+                            FROM chat_messages 
+                            WHERE id = $3
+                        )
+                    ORDER BY created_at DESC, id DESC
+                    LIMIT $2
+                    "#,
+                    session_id,
+                    limit,
+                    cursor_id
+                )
+                .fetch_all(&self.pool)
+                .await
+            }
+            None => {
+                sqlx::query_as!(
+                    ChatMessageRow,
+                    r#"
+                    SELECT id, session_id, role, content, created_at
+                    FROM chat_messages
+                    WHERE session_id = $1
+                    ORDER BY created_at DESC, id DESC
+                    LIMIT $2
+                    "#,
+                    session_id,
+                    limit
+                )
+                .fetch_all(&self.pool)
+                .await
+            }
+        }
         .map_err(|_| ChatSessionError::RepoFailure("Failed to list chat messages".to_string()))?;
 
         let count = rows.len();
         tracing::debug!(
-            event = "chat_message_repository.list_by_session_id",
+            event = "chat_message_repository.list_messages",
             count = count
         );
+
         Ok(rows.into_iter().map(|row| row.into()).collect())
     }
 }
