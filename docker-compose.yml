@@ -3,7 +3,6 @@ name: platform-control-plane
 services:
   platform-postgres:
     image: postgres:18.1-trixie
-    container_name: platform-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -20,9 +19,19 @@ services:
     volumes:
       - platform-postgres-data:/var/lib/postgresql
 
+  # Migration init container - runs before platform-api
+  platform-api-migrate:
+    image: platform-api-dev:latest
+    working_dir: /usr/src/platform-control-plane/backend/crates/infra
+    environment:
+      DATABASE_URL: "postgres://postgres:postgres@platform-postgres:5432/platform_db"
+    command: sqlx migrate run
+    depends_on:
+      platform-postgres:
+        condition: service_healthy
+
   platform-api:
-    image: platform-api:latest
-    container_name: platform-api
+    image: platform-api-dev:latest
     restart: unless-stopped
     environment:
       RUST_LOG: info
@@ -30,17 +39,20 @@ services:
       PLATFORM_API__APPLICATION__PORT: 8000
       PLATFORM_API__DATABASE__USERNAME: postgres
       PLATFORM_API__DATABASE__PASSWORD: postgres
-      PLATFORM_API__DATABASE__PORT: 15002
-      PLATFORM_API__DATABASE__HOST: host.docker.internal
+      PLATFORM_API__DATABASE__PORT: 5432
+      PLATFORM_API__DATABASE__HOST: platform-postgres
       PLATFORM_API__DATABASE__NAME: platform_db
-      PLATFORM_API__ORCHESTRATOR__ENDPOINT: "http://host.docker.internal:50051"
+      PLATFORM_API__ORCHESTRATOR__ENDPOINT: "grpc://host.docker.internal:50051"
       PLATFORM_API__TRACING__ENABLED: false
       PLATFORM_API__TRACING__OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      RUST_BACKTRACE: 1
     ports:
       - "8000:8000"
     depends_on:
       platform-postgres:
         condition: service_healthy
+      platform-api-migrate:
+        condition: service_completed_successfully
 
 volumes:
   platform-postgres-data:
