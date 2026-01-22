@@ -5,10 +5,14 @@ default: build
 # ----- Dev commands -----
 
 build:
+    docker compose up platform-postgres -d
     cargo build
+    docker compose down
 
 test:
+    docker compose up platform-postgres -d
     cargo test
+    docker compose down
 
 fmt:
     cargo fmt
