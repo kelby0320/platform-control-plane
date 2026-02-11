@@ -18,7 +18,9 @@ fmt:
     cargo fmt
 
 lint:
+    docker compose up platform-postgres -d
     cargo clippy --all-targets --all-features -- -D warnings
+    docker compose down
 
 run:
     cargo run --bin platform-api
