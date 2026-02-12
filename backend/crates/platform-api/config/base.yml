@@ -4,7 +4,7 @@ application:
 database:
   username: "postgres"
   password: "postgres"
-  port: 5432
+  port: 15002
   host: "localhost"
   name: "platform_db"
 orchestrator:

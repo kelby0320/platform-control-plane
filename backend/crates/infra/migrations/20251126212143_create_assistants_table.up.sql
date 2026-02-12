@@ -11,23 +11,3 @@ CREATE TABLE assistants (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Seed data: Default Assistant
-INSERT INTO assistants (
-    id,
-    name,
-    description,
-    version_major,
-    version_minor,
-    graph_profile_id,
-    model_profile_id,
-    system_prompt
-) VALUES (
-    '733750f6-66bb-4365-abcc-7ee1e989b339',
-    'Default Assistant',
-    'System default assistant',
-    0,
-    1,
-    gen_random_uuid(),
-    gen_random_uuid(),
-    'You are a helpful assistant.'
-);
