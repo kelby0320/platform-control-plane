@@ -18,7 +18,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: platform_db
         ports:
-          - 5432:5432
+          - 15002:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -60,29 +60,16 @@ jobs:
           cargo install sqlx-cli --version 0.8.6 --no-default-features --features postgres
           sqlx migrate run --source backend/crates/infra/migrations
         env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/platform_db
+          DATABASE_URL: postgres://postgres:postgres@localhost:15002/platform_db
+
+      - name: Run cargo build
+        run: cargo build
 
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
 
       - name: Run cargo clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
-        env:
-          PLATFORM_API__APPLICATION__HOST: 0.0.0.0
-          PLATFORM_API__APPLICATION__PORT: 8000
-          PLATFORM_API__DATABASE__USERNAME: postgres
-          PLATFORM_API__DATABASE__PASSWORD: postgres
-          PLATFORM_API__DATABASE__HOST: localhost
-          PLATFORM_API__DATABASE__PORT: 5432
-          PLATFORM_API__DATABASE__NAME: platform_db
 
       - name: Run cargo test
         run: cargo test --all
-        env:
-          PLATFORM_API__APPLICATION__HOST: 0.0.0.0
-          PLATFORM_API__APPLICATION__PORT: 8000
-          PLATFORM_API__DATABASE__USERNAME: postgres
-          PLATFORM_API__DATABASE__PASSWORD: postgres
-          PLATFORM_API__DATABASE__HOST: localhost
-          PLATFORM_API__DATABASE__PORT: 5432
-          PLATFORM_API__DATABASE__NAME: platform_db
