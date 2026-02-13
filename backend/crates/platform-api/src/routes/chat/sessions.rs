@@ -8,8 +8,9 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
-use domain::assistant::values::AssistantId;
-use domain::chat::values::{SessionId, SessionTitle};
+use domain::assistant::AssistantId;
+use domain::chat::errors::ChatSessionError;
+use domain::chat::{SessionId, SessionTitle};
 use domain::shared::user::UserId;
 use serde::Deserialize;
 use uuid::Uuid;
@@ -72,7 +73,10 @@ pub async fn create_chat_session(
 ) -> Result<Json<ChatSessionResponse>, impl IntoResponse> {
     // TODO: Get user_id from JWT
     let user_id = UserId::from(Uuid::new_v4());
-    let title = SessionTitle::from(request.title);
+    let title = SessionTitle::try_from(request.title).map_err(|err| match err {
+        ChatSessionError::TitleTooLong => (StatusCode::BAD_REQUEST, "Session title is too long"),
+        _ => (StatusCode::BAD_REQUEST, "Invalid chat session title"),
+    })?;
     let assistant_id = AssistantId::from(request.assistant_id);
 
     match state

@@ -26,23 +26,23 @@ pub struct AssistantResponse {
 impl From<Assistant> for AssistantResponse {
     fn from(assistant: Assistant) -> Self {
         Self {
-            id: assistant.id.into(),
-            name: assistant.name.into(),
-            description: assistant.description,
-            version_major: assistant.version_major,
-            version_minor: assistant.version_minor,
-            graph_profile_id: assistant.graph_profile_id.into(),
+            id: assistant.id().clone().into(),
+            name: assistant.name().clone().into(),
+            description: assistant.description().to_string(),
+            version_major: assistant.version_major(),
+            version_minor: assistant.version_minor(),
+            graph_profile_id: assistant.graph_profile_id().clone().into(),
             model_bindings: assistant
-                .model_bindings
-                .into_iter()
+                .model_bindings()
+                .iter()
                 .map(|mb| ModelBindingResponse {
-                    slot_name: mb.slot_name,
-                    model_profile_id: mb.model_profile_id.into(),
+                    slot_name: mb.slot_name().to_string(),
+                    model_profile_id: mb.model_profile_id().clone().into(),
                 })
                 .collect(),
-            system_prompt: assistant.system_prompt,
-            created_at: assistant.created_at,
-            updated_at: assistant.updated_at,
+            system_prompt: assistant.system_prompt().to_string(),
+            created_at: assistant.created_at().to_owned(),
+            updated_at: assistant.updated_at().to_owned(),
         }
     }
 }

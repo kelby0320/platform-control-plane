@@ -1,13 +1,13 @@
+use crate::assistant::AssistantId;
 use crate::assistant::repositories::AssistantRepository;
-use crate::assistant::values::AssistantId;
 use crate::chat::{
     errors::{ChatSessionError, ChatTurnError},
-    messages::ChatMessage,
+    models::{
+        ChatEventStream, ChatMessage, ChatSession, ChatTurn, MessageId, MessageRole, SessionId,
+        SessionTitle,
+    },
     port::ChatOrchestratorPort,
     repositories::{ChatMessageRepository, ChatSessionRepository},
-    session::ChatSession,
-    turn::{ChatEventStream, ChatTurn},
-    values::{MessageId, MessageRole, SessionId, SessionTitle},
 };
 use crate::shared::Paginated;
 use crate::shared::user::UserId;
@@ -64,19 +64,19 @@ impl<S: ChatSessionRepository + Send + Sync, M: ChatMessageRepository + Send + S
         title: SessionTitle,
         assistant_id: AssistantId,
     ) -> Result<ChatSession, ChatSessionError> {
-        let session = ChatSession {
-            id: SessionId::from(Uuid::new_v4()),
-            user_id,
-            assistant_id,
-            title: title.clone(),
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
-        };
+        let session = ChatSession::builder()
+            .id(SessionId::from(Uuid::new_v4()))
+            .user_id(user_id)
+            .assistant_id(assistant_id)
+            .title(title.clone())
+            .created_at(Utc::now())
+            .updated_at(Utc::now())
+            .build()?;
         let session = self.session_repository.create(session).await?;
         tracing::debug!(
             event = "chat.create_session",
-            id = String::from(Uuid::from(session.id.clone())),
-            title = String::from(session.title.clone()),
+            id = String::from(Uuid::from(session.id().clone())),
+            title = String::from(session.title().clone()),
         );
         Ok(session)
     }
@@ -86,8 +86,8 @@ impl<S: ChatSessionRepository + Send + Sync, M: ChatMessageRepository + Send + S
         let session = self.session_repository.get_by_id(id).await?;
         tracing::debug!(
             event = "chat.get_session",
-            id = String::from(Uuid::from(session.id.clone())),
-            title = String::from(session.title.clone()),
+            id = String::from(Uuid::from(session.id().clone())),
+            title = String::from(session.title().clone()),
         );
         Ok(session)
     }
@@ -191,7 +191,7 @@ impl<
             .map_err(|e| ChatTurnError::Internal(format!("Failed to fetch session: {}", e)))?;
 
         // Verify the session belongs to the user
-        if session.user_id != user_id {
+        if session.user_id() != &user_id {
             return Err(ChatTurnError::Internal(
                 "Session does not belong to user".to_string(),
             ));
@@ -200,18 +200,18 @@ impl<
         // Fetch the assistant
         let assistant = self
             .assistant_repository
-            .get_by_id(session.assistant_id.clone())
+            .get_by_id(session.assistant_id().clone())
             .await
             .map_err(|e| ChatTurnError::Internal(format!("Failed to fetch assistant: {}", e)))?;
 
         // Create the user message
-        let user_message = ChatMessage {
-            id: MessageId::from(Uuid::new_v4()),
-            session_id: session_id.clone(),
-            role: MessageRole::User,
-            content: user_message_content,
-            created_at: Utc::now(),
-        };
+        let user_message = ChatMessage::builder()
+            .id(MessageId::from(Uuid::new_v4()))
+            .session_id(session_id.clone())
+            .role(MessageRole::User)
+            .content(user_message_content)
+            .created_at(Utc::now())
+            .build()?;
 
         // Fetch message history
         // Fetch up to 50 recent messages for context
@@ -224,12 +224,12 @@ impl<
             })?;
 
         // Construct ChatTurn
-        let turn = ChatTurn {
-            session,
-            assistant,
-            user_message,
-            history_tail,
-        };
+        let turn = ChatTurn::builder()
+            .session(session)
+            .assistant(assistant)
+            .user_message(user_message)
+            .history_tail(history_tail)
+            .build()?;
 
         // Call the orchestrator
         let stream = self.orchestrator.start_chat_turn(turn).await?;

@@ -1,5 +1,5 @@
 use crate::chat::errors::ChatTurnError;
-use crate::chat::turn::{ChatEventStream, ChatTurn};
+use crate::chat::models::{ChatEventStream, ChatTurn};
 use async_trait::async_trait;
 
 #[async_trait]

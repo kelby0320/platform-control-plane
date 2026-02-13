@@ -22,12 +22,12 @@ pub struct ChatSessionResponse {
 impl From<ChatSession> for ChatSessionResponse {
     fn from(session: ChatSession) -> Self {
         Self {
-            id: session.id.into(),
-            user_id: session.user_id.into(),
-            assistant_id: session.assistant_id.into(),
-            title: session.title.into(),
-            created_at: session.created_at,
-            updated_at: session.updated_at,
+            id: session.id().clone().into(),
+            user_id: session.user_id().clone().into(),
+            assistant_id: session.assistant_id().clone().into(),
+            title: session.title().clone().into(),
+            created_at: session.created_at().to_owned(),
+            updated_at: session.updated_at().to_owned(),
         }
     }
 }

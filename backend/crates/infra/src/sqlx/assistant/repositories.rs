@@ -43,12 +43,12 @@ impl AssistantRepository for SqlxAssistantRepository {
         .await
         .map_err(|_| AssistantError::RepoFailure("Failed to create assistant".to_string()))?;
 
-        for binding in &assistant.model_bindings {
+        for binding in assistant.model_bindings() {
             sqlx::query!(
                 "INSERT INTO model_bindings (assistant_id, slot_name, model_profile_id) VALUES ($1, $2, $3)",
                 row.id,
-                binding.slot_name,
-                Uuid::from(binding.model_profile_id.clone())
+                binding.slot_name(),
+                Uuid::from(binding.model_profile_id().clone())
             )
             .execute(&mut *tx)
             .await
@@ -64,7 +64,7 @@ impl AssistantRepository for SqlxAssistantRepository {
             id = String::from(row.id),
             name = row.name.clone(),
         );
-        Ok(row.to_assistant(assistant.model_bindings))
+        Ok(row.to_assistant(assistant.model_bindings().to_vec()))
     }
 
     #[instrument(name = "assistant_repository.get_by_id", level = "INFO", skip_all, err)]

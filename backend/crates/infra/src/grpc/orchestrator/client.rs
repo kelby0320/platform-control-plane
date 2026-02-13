@@ -2,7 +2,7 @@ use crate::grpc::orchestrator::mapper::{build_proto_request, map_proto_event};
 use crate::grpc::orchestrator::proto::aisp::v1::chat_orchestrator_client::ChatOrchestratorClient;
 use domain::chat::errors::ChatTurnError;
 use domain::chat::port::ChatOrchestratorPort;
-use domain::chat::turn::{ChatEventStream, ChatTurn};
+use domain::chat::{ChatEventStream, ChatTurn};
 use std::sync::atomic::{AtomicU32, Ordering};
 use tonic::transport::Channel;
 use tracing::instrument;

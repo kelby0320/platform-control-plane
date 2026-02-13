@@ -5,7 +5,7 @@ use axum::{
     extract::{Path, State},
     response::sse::{Event, Sse},
 };
-use domain::chat::{turn::ChatEvent, values::SessionId};
+use domain::chat::{ChatEvent, SessionId};
 use futures::Stream;
 use futures::stream::StreamExt;
 use std::convert::Infallible;
@@ -29,7 +29,8 @@ pub async fn new_chat_turn(
                 .data("Session not found")
         })
         .unwrap()
-        .user_id;
+        .user_id()
+        .clone();
 
     let stream = state
         .chat_turn_service

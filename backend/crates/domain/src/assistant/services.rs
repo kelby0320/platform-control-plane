@@ -1,7 +1,7 @@
 use crate::assistant::Assistant;
+use crate::assistant::AssistantId;
 use crate::assistant::errors::AssistantError;
 use crate::assistant::repositories::AssistantRepository;
-use crate::assistant::values::AssistantId;
 use async_trait::async_trait;
 use tracing::instrument;
 use uuid::Uuid;
@@ -29,8 +29,8 @@ impl<R: AssistantRepository + Send + Sync> AssistantService for AssistantService
         let assistant = self.repository.get_by_id(id).await?;
         tracing::debug!(
             event = "assistant.get_assistant",
-            id = String::from(Uuid::from(assistant.id.clone())),
-            name = String::from(assistant.name.clone()),
+            id = String::from(Uuid::from(assistant.id().clone())),
+            name = String::from(assistant.name().clone()),
         );
         Ok(assistant)
     }

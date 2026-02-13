@@ -1,8 +1,7 @@
 use chrono::{DateTime, Utc};
 use domain::chat::{
-    messages::ChatMessage,
-    turn::{ChatEvent, HistoryDelta, Metrics, TokenChunk},
-    values::{MessageId, MessageRole, SessionId},
+    ChatEvent, ChatMessage, ChatTurn, HistoryDelta, MessageId, MessageRole, Metrics, SessionId,
+    TokenChunk,
 };
 use prost_types::Timestamp;
 use uuid::Uuid;
@@ -12,39 +11,38 @@ use crate::grpc::orchestrator::proto::aisp::v1::{
     ModelBinding, Role as ProtoRole, UserInput, chat_event::Payload,
 };
 
-use domain::chat::turn::ChatTurn;
-
 /// Convert domain ChatTurn to proto ChatTurnRequest
 pub fn build_proto_request(turn: ChatTurn) -> ChatTurnRequest {
     let request_id = Uuid::new_v4().to_string();
-    let session_id = Uuid::from(turn.session.id).to_string();
-    let user_id = Uuid::from(turn.session.user_id).to_string();
+    let session_id = Uuid::from(turn.session().id().clone()).to_string();
+    let user_id = Uuid::from(turn.session().user_id().clone()).to_string();
 
     let assistant_config = AssistantConfig {
-        assistant_id: Uuid::from(turn.assistant.id).to_string(),
-        graph_profile_id: Uuid::from(turn.assistant.graph_profile_id).to_string(),
+        assistant_id: Uuid::from(turn.assistant().id().clone()).to_string(),
+        graph_profile_id: Uuid::from(turn.assistant().graph_profile_id().clone()).to_string(),
         model_bindings: turn
-            .assistant
-            .model_bindings
-            .into_iter()
+            .assistant()
+            .model_bindings()
+            .iter()
             .map(|b| ModelBinding {
-                slot_name: b.slot_name,
-                model_profile_id: Uuid::from(b.model_profile_id).to_string(),
+                slot_name: b.slot_name().to_string(),
+                model_profile_id: Uuid::from(b.model_profile_id().clone()).to_string(),
             })
             .collect(),
-        system_prompt: turn.assistant.system_prompt,
+        system_prompt: turn.assistant().system_prompt().to_string(),
     };
 
     let history_context = HistoryContext {
         tail: turn
-            .history_tail
-            .into_iter()
+            .history_tail()
+            .iter()
+            .cloned()
             .map(map_message_to_proto)
             .collect(),
     };
 
     let user_input = UserInput {
-        message: turn.user_message.content,
+        message: turn.user_message().content().to_string(),
     };
 
     ChatTurnRequest {
@@ -60,10 +58,10 @@ pub fn build_proto_request(turn: ChatTurn) -> ChatTurnRequest {
 /// Convert domain ChatMessage to proto MessageEntry
 fn map_message_to_proto(message: ChatMessage) -> MessageEntry {
     MessageEntry {
-        id: Uuid::from(message.id).to_string(),
-        role: map_role_to_proto(message.role) as i32,
-        content: message.content,
-        created_at: Some(chrono_to_prost_timestamp(message.created_at)),
+        id: Uuid::from(message.id().clone()).to_string(),
+        role: map_role_to_proto(message.role().clone()) as i32,
+        content: message.content().to_string(),
+        created_at: Some(chrono_to_prost_timestamp(message.created_at().to_owned())),
     }
 }
 
@@ -105,13 +103,14 @@ pub fn map_proto_event(event: ProtoChatEvent) -> Result<ChatEvent, String> {
                         .unwrap_or_else(Utc::now);
                     let id = Uuid::parse_str(&entry.id)
                         .map_err(|e| format!("Invalid message ID: {}", e))?;
-                    Ok(ChatMessage {
-                        id: MessageId::from(id),
-                        session_id: SessionId::from(Uuid::nil()), // Will be set by caller if needed
-                        role,
-                        content: entry.content,
-                        created_at,
-                    })
+                    ChatMessage::builder()
+                        .id(MessageId::from(id))
+                        .session_id(SessionId::from(Uuid::nil())) // Will be set by caller if needed
+                        .role(role)
+                        .content(entry.content)
+                        .created_at(created_at)
+                        .build()
+                        .map_err(|e| e.to_string())
                 })
                 .collect::<Result<Vec<_>, String>>()?;
             Ok(ChatEvent::HistoryDelta(HistoryDelta { new_messages }))

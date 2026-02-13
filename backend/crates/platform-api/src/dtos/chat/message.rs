@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use domain::chat::messages::ChatMessage;
+use domain::chat::ChatMessage;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -15,11 +15,11 @@ pub struct ChatMessageResponse {
 impl From<ChatMessage> for ChatMessageResponse {
     fn from(message: ChatMessage) -> Self {
         Self {
-            id: message.id.into(),
-            session_id: message.session_id.into(),
-            role: message.role.to_string(),
-            content: message.content,
-            created_at: message.created_at,
+            id: message.id().clone().into(),
+            session_id: message.session_id().clone().into(),
+            role: message.role().to_string(),
+            content: message.content().to_string(),
+            created_at: message.created_at().to_owned(),
         }
     }
 }
