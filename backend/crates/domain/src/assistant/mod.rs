@@ -1,11 +1,9 @@
-pub mod entities;
 pub mod errors;
+pub mod model;
 pub mod repositories;
-pub mod service;
-pub mod values;
+pub mod services;
 
-pub use entities::*;
 pub use errors::*;
+pub use model::*;
 pub use repositories::*;
-pub use service::*;
-pub use values::*;
+pub use services::*;

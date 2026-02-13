@@ -1,5 +1,5 @@
+pub mod models;
 pub mod repositories;
-pub mod types;
 
+pub use models::*;
 pub use repositories::*;
-pub use types::*;

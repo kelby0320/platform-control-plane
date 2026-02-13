@@ -8,4 +8,6 @@ pub enum AssistantError {
     NameTooLong,
     #[error("Repository failure: {0}")]
     RepoFailure(String),
+    #[error("Invalid assistant model: {0}")]
+    Invalid(String),
 }

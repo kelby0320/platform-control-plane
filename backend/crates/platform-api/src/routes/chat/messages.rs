@@ -6,11 +6,10 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
-use domain::chat::values::SessionId;
+use domain::chat::{MessageId, SessionId};
 use uuid::Uuid;
 
 use axum::extract::Query;
-use domain::chat::values::MessageId;
 use serde::Deserialize;
 
 #[derive(Deserialize)]

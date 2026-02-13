@@ -1,7 +1,7 @@
 use crate::make_middleware_stack;
 use crate::routes::health::healthz;
 use axum::{Router, routing::get};
-use domain::assistant::service::{AssistantService, AssistantServiceImpl};
+use domain::assistant::services::{AssistantService, AssistantServiceImpl};
 use domain::chat::service::{
     ChatSessionService, ChatSessionServiceImpl, ChatTurnService, ChatTurnServiceImpl,
 };

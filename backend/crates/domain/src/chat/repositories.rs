@@ -1,7 +1,5 @@
 use crate::chat::errors::ChatSessionError;
-use crate::chat::messages::ChatMessage;
-use crate::chat::session::ChatSession;
-use crate::chat::values::SessionId;
+use crate::chat::models::{ChatMessage, ChatSession, MessageId, SessionId};
 use crate::shared::Paginated;
 use async_trait::async_trait;
 
@@ -23,6 +21,6 @@ pub trait ChatMessageRepository {
         &self,
         session_id: SessionId,
         limit: i64,
-        before_id: Option<crate::chat::values::MessageId>,
+        before_id: Option<MessageId>,
     ) -> Result<Vec<ChatMessage>, ChatSessionError>;
 }

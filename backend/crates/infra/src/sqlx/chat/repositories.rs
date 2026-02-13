@@ -1,8 +1,9 @@
 use crate::sqlx::chat::{ChatMessageRow, ChatSessionRow};
 use async_trait::async_trait;
-use domain::chat::values::MessageId;
-use domain::chat::{ChatMessage, ChatMessageRepository};
-use domain::chat::{ChatSession, ChatSessionError, ChatSessionRepository, SessionId};
+use domain::chat::{
+    ChatMessage, ChatMessageRepository, ChatSession, ChatSessionError, ChatSessionRepository,
+    MessageId, SessionId,
+};
 use domain::shared::Paginated;
 use sqlx::PgPool;
 use tracing::instrument;
@@ -42,7 +43,9 @@ impl ChatSessionRepository for SqlxChatSessionRepository {
             id = String::from(row.id),
             title = row.title.clone(),
         );
-        Ok(row.into())
+        row.try_into().map_err(|err: ChatSessionError| {
+            ChatSessionError::RepoFailure(format!("Invalid chat session data: {err}"))
+        })
     }
 
     #[instrument(
@@ -66,7 +69,9 @@ impl ChatSessionRepository for SqlxChatSessionRepository {
             id = String::from(row.id),
             title = row.title.clone(),
         );
-        Ok(row.into())
+        row.try_into().map_err(|err: ChatSessionError| {
+            ChatSessionError::RepoFailure(format!("Invalid chat session data: {err}"))
+        })
     }
 
     #[instrument(name = "chat_session_repository.list", level = "INFO", skip_all, err)]
@@ -94,7 +99,13 @@ impl ChatSessionRepository for SqlxChatSessionRepository {
 
         let total_items = count_row.count.unwrap_or(0);
 
-        let items = rows.into_iter().map(|row| row.into()).collect();
+        let items: Vec<ChatSession> = rows
+            .into_iter()
+            .map(ChatSession::try_from)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|err: ChatSessionError| {
+                ChatSessionError::RepoFailure(format!("Invalid chat session data: {err}"))
+            })?;
 
         Ok(Paginated { items, total_items })
     }
@@ -135,7 +146,7 @@ impl ChatMessageRepository for SqlxChatMessageRepository {
             id = String::from(row.id),
             session_id = String::from(row.session_id),
         );
-        Ok(row.into())
+        row.try_into()
     }
 
     #[instrument(
@@ -201,6 +212,6 @@ impl ChatMessageRepository for SqlxChatMessageRepository {
             count = count
         );
 
-        Ok(rows.into_iter().map(|row| row.into()).collect())
+        rows.into_iter().map(ChatMessage::try_from).collect()
     }
 }

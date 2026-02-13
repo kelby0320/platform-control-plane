@@ -7,7 +7,7 @@ use axum::{
     response::IntoResponse,
 };
 use axum::{Router, routing::get};
-use domain::assistant::values::AssistantId;
+use domain::assistant::AssistantId;
 use uuid::Uuid;
 
 pub async fn get_assistants(

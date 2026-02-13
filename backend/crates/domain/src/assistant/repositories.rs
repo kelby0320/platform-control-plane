@@ -1,6 +1,6 @@
 use crate::assistant::Assistant;
+use crate::assistant::AssistantId;
 use crate::assistant::errors::AssistantError;
-use crate::assistant::values::AssistantId;
 use async_trait::async_trait;
 
 #[async_trait]
